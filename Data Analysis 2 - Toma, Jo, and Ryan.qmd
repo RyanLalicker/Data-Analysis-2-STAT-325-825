@@ -1,0 +1,82 @@
+---
+title: "Data Analysis 2"
+authors: 
+  Maksuda Aktar Toma
+  Jo Charbonneau
+  Ryan Lalicker
+date: today
+date-format: long
+abstract: |
+  If we want an abstract it will go here.  References are in the form @placeHolder or [@placeHolder].  For more information see [here](https://r.mtdv.me/videos/6QMWR9vBma).
+execute: 
+  echo: false
+  warning: false
+columns: 2
+format:
+  pdf: 
+    extensions-dir: quarto-wordcount/_extensions/wordcount
+    fig-align: center
+    fig-width: 6
+    fig-height: 4
+bibliography: references.bib
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
+# Introduction
+
+GitHub page found [here](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
+
+
+
+# Plot
+```{r}
+#| label: fig-rome
+#| echo: false
+#| fig-cap: "Plot of Rome."
+
+## Prints map without code
+# "Map of Imperial Rome in 117 color-coded based on 
+#   senatorial/imperial districts using the `sdam` package."
+library(sdam)
+plot.map(type="si", main="Roman Empire (AD 117)")
+
+```
+
+# Body
+
+
+
+# Conclusion 
+
+
+
+\newpage
+
+# References
+
+::: {#refs}
+:::
+
+\newpage
+
+# Appendix
+
+```{r}
+#| label: appendix A
+#| echo: true
+#| eval: false
+
+## Prints code without running it
+# "Map of Imperial Rome in 117 color-coded based on 
+#   senatorial/imperial districts using the `sdam` package."
+library(sdam)
+plot.map(type="si", main="Roman Empire (AD 117)")
+
+
+
+
+
+
+```
