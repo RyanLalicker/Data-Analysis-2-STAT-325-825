@@ -1,8 +1,8 @@
 ---
 title: "Data Analysis 2"
 authors: 
-  Maksuda Aktar Toma
-  Jo Charbonneau
+  Maksuda Aktar Toma,
+  Jo Charbonneau,
   Ryan Lalicker
 date: today
 date-format: long
@@ -30,17 +30,19 @@ GitHub page found [here](https://github.com/RyanLalicker/Data-Analysis-2-STAT-32
 
 
 
-# Plot
+# Data
+
+Praying this whole thing can be done in R.
 ```{r}
 #| label: fig-rome
 #| echo: false
 #| fig-cap: "Plot of Rome."
 
-## Prints map without code
-# "Map of Imperial Rome in 117 color-coded based on 
-#   senatorial/imperial districts using the `sdam` package."
-library(sdam)
-plot.map(type="si", main="Roman Empire (AD 117)")
+## Prints table without code
+
+library(knitr)
+data <- read.csv("data.csv")
+knitr::kable(head(data), format = 'markdown')
 
 ```
 
@@ -69,10 +71,10 @@ plot.map(type="si", main="Roman Empire (AD 117)")
 #| eval: false
 
 ## Prints code without running it
-# "Map of Imperial Rome in 117 color-coded based on 
-#   senatorial/imperial districts using the `sdam` package."
-library(sdam)
-plot.map(type="si", main="Roman Empire (AD 117)")
+
+library(knitr)
+data <- read.csv("data.csv")
+knitr::kable(head(data), format = 'markdown')
 
 
 
