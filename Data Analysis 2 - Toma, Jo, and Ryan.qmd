@@ -82,3 +82,20 @@ knitr::kable(head(data), format = 'markdown')
 
 
 ```
+
+``` sas
+
+data rptm_means;
+input Inoculation_Method $ Thickness $ @@; 
+do Week=1 to 5 by 1; 
+	input mu @@; 
+	output; 
+end;
+datalines;
+Dry 1/4 4.2573 4.246 4.474 4.3327 4.0127
+Dry 1/8 5.2907 4.9513 5.2013 5.2073 4.9713
+Wet 1/4 5.4013 5.5727 5.55 5.4873 5.3807
+Wet 1/8 5.56 5.7793 5.6313 5.7153 5.62
+;
+
+```
