@@ -28,11 +28,10 @@ editor:
 
 GitHub page found [here](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
 
-
-
 # Data
 
 Praying this whole thing can be done in R.
+
 ```{r}
 #| label: fig-rome
 #| echo: false
@@ -48,11 +47,230 @@ knitr::kable(head(data), format = 'markdown')
 
 # Body
 
+**Summary_Statistic**
+
+```{r}
+#| label: fig-rome
+#| echo: false
+#| fig-cap: "Plot of Rome."
+# Load necessary libraries
+
+library(dplyr)
+library(ggplot2)
+
+# Summary statistics for StarchNscTissue by tissue type, treatment, dayPeriod, and time
+summary_data <- data %>%
+  group_by(tissu, treatment, dayPeriod, time) %>%
+  summarize(
+    mean_Starch = mean(StarchNscTissue, na.rm = TRUE),
+    sd_Starch = sd(StarchNscTissue, na.rm = TRUE),
+    median_Starch = median(StarchNscTissue, na.rm = TRUE),
+    min_Starch = min(StarchNscTissue, na.rm = TRUE),
+    max_Starch = max(StarchNscTissue, na.rm = TRUE),
+    n = n()
+  )
+
+print(summary_data)
+
+## 1. Line Plot of Mean Starch Content by Time
+##This plot shows the trend of mean starch content across time segments for each tissue type and treatment.
+
+ggplot(summary_data, aes(x = time, y = mean_Starch, color = treatment, group = treatment)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(tissu ~ dayPeriod) +
+  labs(
+    title = "Mean Starch Content by Time, Treatment, and Tissue Type",
+    x = "Time Segment",
+    y = "Mean Starch Content"
+  ) +
+  theme_minimal()
+##2. Bar Plot of Mean Starch Content by Tissue Type and Treatment
+#This bar plot can help compare the mean starch content between treatments for each tissue type, averaged over all time points.
+
+ggplot(summary_data, aes(x = tissu, y = mean_Starch, fill = treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ dayPeriod) +
+  labs(
+    title = "Mean Starch Content by Tissue Type and Treatment",
+    x = "Tissue Type",
+    y = "Mean Starch Content"
+  ) +
+  theme_minimal()
+
+##3. Error Bar Plot with Mean and Standard Deviation
+#An error bar plot provides a visual of mean starch content with variability (standard deviation) across time, separated by tissue and treatment.
+
+ggplot(summary_data, aes(x = time, y = mean_Starch, color = treatment, group = treatment)) +
+  geom_line() +
+  geom_point() +
+  geom_errorbar(aes(ymin = mean_Starch - sd_Starch, ymax = mean_Starch + sd_Starch), width = 0.2) +
+  facet_grid(tissu ~ dayPeriod) +
+  labs(
+    title = "Mean Starch Content with Standard Deviation by Time and Treatment",
+    x = "Time Segment",
+    y = "Mean Starch Content"
+  ) +
+  theme_minimal()
+
+##Box_Plot
+ggplot(data, aes(x = tissu, y = StarchNscTissue, fill = treatment)) +
+  geom_boxplot() +
+  facet_wrap(~ dayPeriod) +
+  labs(
+    title = "Boxplot of Starch Content by Tissue Type and Treatment",
+    x = "Tissue Type",
+    y = "Starch Content"
+  ) +
+  theme_minimal()
+
+##Box_Plot with Interaction
+ggplot(data, aes(x = time, y = StarchNscTissue, color = treatment, group = treatment)) +
+  geom_line(stat = "summary", fun = mean) +
+  geom_point(stat = "summary", fun = mean) +
+  facet_wrap(~ dayPeriod) +
+  labs(
+    title = "Interaction Plot: Starch Content by Time and Treatment within DayPeriod",
+    x = "Time Segment",
+    y = "Mean Starch Content"
+  ) +
+  theme_minimal()
+
+```
+
+#Model : Mixed Effects Model with Interactions In this model, we include interactions between tissu, treatment, and dayPeriod to evaluate their combined effects on StarchNscTissue.
+
+```{r}
+#| label: fig-rome
+#| echo: false
+#| fig-cap: "Plot of Rome."
+
+# Load necessary libraries
+library(lme4)
+library(lmerTest)  # for p-values
+
+# Mixed Effects Model with Interactions
+model <- lmer(StarchNscTissue ~ tissu * treatment * dayPeriod + 
+               (1 | campagne) + (1 | sample) + (1 | chamber), data = data)
+
+# Summary of the model
+summary(model)
+
+# Check model fit using AIC and BIC
+AIC(model)
+BIC(model)
+
+# Test significance of interaction terms
+anova(model)
 
 
-# Conclusion 
+```
+
+##Checking assumption
+
+```{r}
+# Q-Q plot for residuals
+qqnorm(residuals(model))
+qqline(residuals(model))
+shapiro.test(residuals(model))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(model), residuals(model))
+abline(h = 0, col = "red")
+# Autocorrelation of residuals
+library(ggplot2)
+acf(resid(model), main = "Autocorrelation of Residuals")
 
 
+
+
+```
+
+##Model 3: Nested Model for DayPeriod and Time Effects In this model, dayPeriod is used as a broader time effect, with time nested within dayPeriod.
+This model also includes campagne, sample, and chamber as random effects.
+
+```{r}
+#| label: fig-rome
+#| echo: false
+#| fig-cap: "Plot of Rome."
+
+# Mixed Effects Model with Nested Time within DayPeriod
+model3 <- lmer(StarchNscTissue ~ tissu + treatment + dayPeriod + dayPeriod:time + 
+               (1 | campagne) + (1 | sample) + (1 | chamber), data = data)
+
+# Summary of the model
+summary(model3)
+
+# Check model fit using AIC and BIC
+AIC(model3)
+BIC(model3)
+
+# Test significance of nested terms
+anova(model3)
+
+```
+
+```{r}
+#| label: fig-rome
+#| echo: false
+#| fig-cap: "Plot of Rome."
+# Q-Q plot for residuals
+qqnorm(residuals(model3))
+qqline(residuals(model3))
+shapiro.test(residuals(model3))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(model3), residuals(model3))
+abline(h = 0, col = "red")
+
+# Autocorrelation of residuals
+library(ggplot2)
+acf(resid(model3), main = "Autocorrelation of Residuals")
+```
+
+```{r}
+#| label: fig-rome
+#| echo: false
+#| fig-cap: "Plot of Rome."
+
+# Model 2 - Interaction effects
+model_2 <- lm(StarchNscTissue ~ treatment * tissu * dayPeriod + campagne, data = data)
+summary(model_2)
+
+```
+
+```{r}
+# Q-Q plot for residuals
+qqnorm(residuals(model_2))
+qqline(residuals(model_2))
+shapiro.test(residuals(model_2))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(model_2), residuals(model_2))
+abline(h = 0, col = "red")
+
+```
+
+```{r}
+#| label: fig-rome
+#| echo: false
+#| fig-cap: "Plot of Rome."
+
+# Model 3 - Mixed model with chamber as random effect
+model_3 <- lmer(StarchNscTissue ~ treatment * tissu * dayPeriod + campagne + (1 | chamber), data = data)
+summary(model_3)
+
+```
+
+```{r}
+# Q-Q plot for residuals
+qqnorm(residuals(model_3))
+qqline(residuals(model_3))
+shapiro.test(residuals(model_3))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(model_3), residuals(model_3))
+abline(h = 0, col = "red")
+
+```
+
+# Conclusion
 
 \newpage
 
@@ -88,8 +306,8 @@ knitr::kable(head(data), format = 'markdown')
 data rptm_means;
 input Inoculation_Method $ Thickness $ @@; 
 do Week=1 to 5 by 1; 
-	input mu @@; 
-	output; 
+    input mu @@; 
+    output; 
 end;
 datalines;
 Dry 1/4 4.2573 4.246 4.474 4.3327 4.0127
@@ -97,5 +315,4 @@ Dry 1/8 5.2907 4.9513 5.2013 5.2073 4.9713
 Wet 1/4 5.4013 5.5727 5.55 5.4873 5.3807
 Wet 1/8 5.56 5.7793 5.6313 5.7153 5.62
 ;
-
 ```
