@@ -27,9 +27,15 @@ editor:
 ```{r}
 #| label: data-setup
 #| echo: false
+#| eval: true
+data <- read.csv("data.csv")
+```
+
+```{r}
+#| label: Scratch work
+#| echo: false
 #| eval: false
 
-data <- read.csv("data.csv")
 num_unique_tissu <- length(unique(data$tissu))
 num_unique_tissu
 num_unique_time <- length(unique(data$time))
@@ -38,29 +44,113 @@ time_counts <- table(data$time)
 time_counts
 num_unique_dp <- length(unique(data$dayPeriod))
 num_unique_dp
-
+table(data$campagne)
+num_unique_camp <- length(unique(data$campagne))
 ```
 
 # Introduction
 
-Our clients conducted an experiment to determine the effect pine tissues, precipitation levels, time, and the interaction of these variables effects starch content. The experiment was replicated at two locations as well and not all measurements within each replication were taken from the same sample location. (dont like that last line)
+Our clients conducted an experiment to determine the effect pine tissues, precipitation levels, time, and the interaction of these variables effects starch content. In total, 408 entries were recorded.  The experiment was replicated at two locations as well and not all measurements within each replication were taken from the same sample location. (dont like that last line)
 
 We intend to analysis the results of this data below.  We will review the variables, fit multiple models, and make a suggestion to the client.  The data set, `data.csv`, and all other files used in this project can be found on our  [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
 
+
 # Exploring the Data
 
-### Variables
+## Variables
 
-In the data set provided by the client there are four tissue types which are abbreviated as END, IT, LM, and UM.  This can be found in the `tissu` column.  The two precipitation levels, control and drought, are in the `treatment` column.  The time component of the experiment is not simply one variable.  The `time` column consists of seven different times, with six being denoted by the first six letters of the alphabet while the other time point is denoted by A'.  While we suspect this last time value could be a typo, we will treat it as a separate time for now.  In addition to `time`, the column `dayPeriod` indicates whether the measurement was taken in the day or at night. Note, the measurements for the starch contents can be found in the `StarchNscTissue`.
+In the data set provided by the client there are four tissue types which are abbreviated as END, IT, LM, and UM.  This can be found in the `tissu` column.  The two precipitation levels, control and drought, are in the `treatment` column.  The time component of the experiment is not simply one variable.  The `time` column consists of six different times, with six being denoted by the first six letters of the alphabet. In addition to `time`, the column `dayPeriod` indicates whether the measurement was taken in the day or at night. Time points C and D appear to correspond to a `dayPeriod` of night, while all other time points are during the day. Note, the measurements for the starch contents can be found in the `StarchNscTissue` and each sample number can be found in the `sample` column.
 
-The data set provided by the client also includes variables that indicate the physical location of where the measurement was taken within a sample.  These are represented the columns `row`, `col`, and `chamber` with the latter being in the form `row`-`col` for each respective entry.  Also, since the experiment was carried out at two locations which is represented by the `campagne` column.  
+The data set provided by the client also includes variables that indicate the physical location of where the measurement was taken within a sample.  These are represented the columns `row`, `col`, and `chamber` with the latter being in the form `row`-`col` for each respective entry. The possible values of `row` and `col` range from one to four. Also, since the experiment was carried out at two locations which is represented by the `campagne` column.  
 
 
-### Potential models
+### Changes made to the variables in the original data set
+
+Note there were a couple of problems with the original data set.  Initially the `time` column included a seventh time, A'.  Since this did not follow the format of the other time points and had substantially fewer occurrences in the data, we assumed this was a mistake.  Therefore, we manually changed all occurrences of A' to A.
+
+The other potential issue was in the `chamber` column.  As stated above this column should be a combination of `row` and `col`, but the original data set was treating it as a date.  For example if one sample has the values `row` $=1$ and `col` $=4$, the result of `chamber` should be $1-4$.  Instead the original data set was showing January 4th.  We chose to manually change this to the correct format as well.
+
+
+## Summary Statistics
+
+While some of the variables outlined above are numeric, most can be treated as categorical.  The lone exception to this is the starch content.  The table below shows some summary statistics for the starch content.  This includes not only the summaries of all 408 measurements, but also the summaries based on the two values of `campagne` and `dayPeriod`.
+
+
+```{r}
+#| label: fig-abbrevstats
+#| echo: false
+#| eval: true
+#| fig-cap: "Summary statistics of starch content."
+
+library(knitr)
+library(dplyr)
+
+overall_summary <- data %>%
+  summarize(
+    Mean = mean(StarchNscTissue, na.rm = TRUE),
+    Median = median(StarchNscTissue, na.rm = TRUE),
+    SD = sd(StarchNscTissue, na.rm = TRUE),
+    Min = min(StarchNscTissue, na.rm = TRUE),
+    Max = max(StarchNscTissue, na.rm = TRUE),
+    N = n()
+  ) %>%
+  mutate(Group = "Overall")
+
+# By Location (campagne)
+location_summary <- data %>%
+  group_by(campagne) %>%
+  summarize(
+    Mean = mean(StarchNscTissue, na.rm = TRUE),
+    Median = median(StarchNscTissue, na.rm = TRUE),
+    SD = sd(StarchNscTissue, na.rm = TRUE),
+    Min = min(StarchNscTissue, na.rm = TRUE),
+    Max = max(StarchNscTissue, na.rm = TRUE),
+    N = n()
+  ) %>%
+  mutate(Group = paste("campagne:", campagne))
+
+# By DayPeriod
+dayperiod_summary <- data %>%
+  group_by(dayPeriod) %>%
+  summarize(
+    Mean = mean(StarchNscTissue, na.rm = TRUE),
+    Median = median(StarchNscTissue, na.rm = TRUE),
+    SD = sd(StarchNscTissue, na.rm = TRUE),
+    Min = min(StarchNscTissue, na.rm = TRUE),
+    Max = max(StarchNscTissue, na.rm = TRUE),
+    N = n()
+  ) %>%
+  mutate(Group = paste("dayPeriod:", dayPeriod))
+
+# Combine tables
+combined_summary <- bind_rows(overall_summary, location_summary, dayperiod_summary) %>%
+  arrange(factor(Group, levels = c("Overall", unique(location_summary$Group), unique(dayperiod_summary$Group)))) %>%
+  select(Group, N, Mean, Median, SD, Min, Max)
+
+# Display the table
+kable(combined_summary, format = "markdown")
+```
+
+For starch contents across all measurements, the values range from about 0.019 to 7.898 with a median of roughly 1.430 and a mean of 1.925.  The location of the median and mean with respect to the minimum and maximum is an early sign that the starch contents could be skewed and thus non-normal in distribution.
+
+When comparing the two locations (`campagne`) where the experiment was replicated, we can see the 184 measurements from the first location seems to have lower values on average than the 224 measurements from location 2.  There is a smaller difference in these metrics when comparing measurements taken in the day versus those taken in the night. Note over twice as many measurements were taken in the day.  
+
+To generate a table of summary statistics that account for more of the variables see *Appendix A - R Code*.  That table is not included here due to its larger size. 
+
+
+## Relationships among variables
+
+
+
+
+# Potential models
 
 The replication mentioned above suggests a mixed model approach is needed.  This is due to the replication being a random effect.  The simplest case of a this type of model is a linear mixed model.  To use this, the starch measurements, which will be the dependent variable in whatever model we choose, must be approximately normally distributed.
 
-To see whether the starch content does follow a normal distribution we can use both a histogram and a Q-Q plot.  For a histogram, shown in the leftward plot below, we would expect the bell shape commonly assosciated with the normal distribution.  For the Q-Q plot, the second plot below, the points should fall along a straight line, which is indicated by the red line in the plot.
+
+## Normality of Starch Content
+
+As discussed in the *Summary Statistics* section, we suspect the starch content variable may be non-normal.  There are a few ways to check this.  One way is visually by using both a histogram and a Q-Q plot.  For a histogram, shown in the leftward plot below, we would expect a symmetrical bell shape if the data is from a normal distribution.  For the Q-Q plot, the second plot below, the points should fall along a straight line, which is indicated by the red line in the plot.
 
 ```{r}
 #| label: fig-normallity
@@ -72,8 +162,6 @@ To see whether the starch content does follow a normal distribution we can use b
 #|  - "Histogram of starch content."
 #|  - "Q-Q plot of starch content."
 library(ggplot2)
-
-data <- read.csv("data.csv")
 
 ggplot(data, aes(x = StarchNscTissue)) +
   geom_histogram(binwidth = 0.5, color = "black", fill = "skyblue") +
@@ -95,35 +183,26 @@ ggplot(data, aes(sample = StarchNscTissue)) +
 
 ```
 
-As we can see, the normality assumption is not holding in either case.  The histogram has a heavy right-skew and the points on the Q-Q plot do not follow a straight line.  Additionally (enter statistical test here)...
+As we can see, the normality assumption is not holding in either case.  The histogram has a heavy right-skew and the points on the Q-Q plot do not follow a straight line.  
 
-Since the normality assumption does not hold, we must consider a generalized linear mixed model which can work with non-normal dependent variables. 
-
-
-
-
+To verify this result we can perform the Shapiro-Wilk test. (@wilk).  The null hypothesis of the test is that the data is normally distributed. However since the test returns a p-value of $2.2*10^{-16}$ we can safely reject the null hypothesis since this is well below any significance level ($\alpha$) commonly used.
 
 ```{r}
-#| label: fig-1-dataset
+#| label: shapiro wilk
 #| echo: false
 #| eval: false
-#| fig-cap: "First six entries of data set provided by clients."
-
-data <- read.csv("data.csv")
-
-## Prints table without code
-
-library(knitr)
-library(dplyr)
-knitr::kable(head(data), format = "latex", booktabs = TRUE, longtable = TRUE, linesep = "") 
-
-
+shapiro.test(data$StarchNscTissue)
 
 ```
 
+Since the normality assumption does not hold, we must consider a generalized linear mixed model which can work with non-normal dependent variables. 
 
+## How explanatory variables can be used
+
+(talk about nesting vs non-nesting methods I guess.  Just introduce the idea before we actually make the models.)
 
 # Summary Statistics
+
 
 **Summary_Statistic**
 
@@ -366,7 +445,7 @@ GitHub page found [here](https://github.com/RyanLalicker/Data-Analysis-2-STAT-32
 
 \newpage
 
-# Appendix
+# Appendix A - R Code
 
 ```{r}
 #| label: appendix A
@@ -385,6 +464,12 @@ knitr::kable(head(data), format = 'markdown')
 
 
 ```
+
+
+\newpage
+
+# Appendix B - SAS Code
+
 
 ``` sas
 
