@@ -80,7 +80,6 @@ While some of the variables outlined above are numeric, most can be treated as c
 #| label: fig-abbrevstats
 #| echo: false
 #| eval: true
-#| fig-cap: "Summary statistics of starch content."
 
 library(knitr)
 library(dplyr)
@@ -128,7 +127,7 @@ combined_summary <- bind_rows(overall_summary, location_summary, dayperiod_summa
   select(Group, N, Mean, Median, SD, Min, Max)
 
 # Display the table
-kable(combined_summary, format = "markdown")
+kable(combined_summary, format = "markdown", caption = "Summary statistics of starch content.")
 ```
 
 For starch contents across all measurements, the values range from about 0.019 to 7.898 with a median of roughly 1.430 and a mean of 1.925.  The location of the median and mean with respect to the minimum and maximum is an early sign that the starch contents could be skewed and thus non-normal in distribution.
@@ -137,20 +136,7 @@ When comparing the two locations (`campagne`) where the experiment was replicate
 
 To generate a table of summary statistics that account for more of the variables see *Appendix A - R Code*.  That table is not included here due to its larger size. 
 
-
-## Relationships among variables
-
-
-
-
-# Potential models
-
-The replication mentioned above suggests a mixed model approach is needed.  This is due to the replication being a random effect.  The simplest case of a this type of model is a linear mixed model.  To use this, the starch measurements, which will be the dependent variable in whatever model we choose, must be approximately normally distributed.
-
-
-## Normality of Starch Content
-
-As discussed in the *Summary Statistics* section, we suspect the starch content variable may be non-normal.  There are a few ways to check this.  One way is visually by using both a histogram and a Q-Q plot.  For a histogram, shown in the leftward plot below, we would expect a symmetrical bell shape if the data is from a normal distribution.  For the Q-Q plot, the second plot below, the points should fall along a straight line, which is indicated by the red line in the plot.
+As previously noted, the table above indicates the starch contents may be skewed and thus non-normal.  This can be evaluated through a histogram and Q-Q plot.  The histogram below supports our suspicion that the data is skewed and the Q-Q plot confirms the measure is non-normal.  Note, all 408 measurements of starch content are used in the plots.
 
 ```{r}
 #| label: fig-normallity
@@ -180,22 +166,22 @@ ggplot(data, aes(sample = StarchNscTissue)) +
   ) +
   theme_minimal()
 
-
 ```
 
-As we can see, the normality assumption is not holding in either case.  The histogram has a heavy right-skew and the points on the Q-Q plot do not follow a straight line.  
 
-To verify this result we can perform the Shapiro-Wilk test. (@wilk).  The null hypothesis of the test is that the data is normally distributed. However since the test returns a p-value of $2.2*10^{-16}$ we can safely reject the null hypothesis since this is well below any significance level ($\alpha$) commonly used.
+## Relationships among variables
 
-```{r}
-#| label: shapiro wilk
-#| echo: false
-#| eval: false
-shapiro.test(data$StarchNscTissue)
 
-```
 
-Since the normality assumption does not hold, we must consider a generalized linear mixed model which can work with non-normal dependent variables. 
+
+# Potential models
+
+The replication mentioned above suggests a mixed model approach is needed.  This is due to the replication being a random effect.  The simplest case of a this type of model is a linear mixed model.  To use this, the residuals of the model must be approximately normally distributed.
+
+
+
+
+
 
 ## How explanatory variables can be used
 
@@ -205,6 +191,9 @@ Since the normality assumption does not hold, we must consider a generalized lin
 
 
 **Summary_Statistic**
+
+
+
 
 ```{r}
 #| label: fig-2-sumstats
