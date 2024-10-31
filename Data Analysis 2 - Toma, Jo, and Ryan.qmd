@@ -50,31 +50,52 @@ num_unique_camp <- length(unique(data$campagne))
 
 # Introduction
 
-Our clients conducted an experiment to determine the effect pine tissues, precipitation levels, time, and the interaction of these variables effects starch content. In total, 408 entries were recorded.  The experiment was replicated at two locations as well and not all measurements within each replication were taken from the same sample location. (dont like that last line)
+Our clients conducted an experiment to determine the effect pine tissues, precipitation levels, time, and the interaction of these variables effects starch content.
+In total, 408 entries were recorded.
+The experiment was replicated at two locations as well and not all measurements within each replication were taken from the same sample location.
+(dont like that last line)
 
-We intend to analysis the results of this data below.  We will review the variables, fit multiple models, and make a suggestion to the client.  The data set, `data.csv`, and all other files used in this project can be found on our  [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
-
+We intend to analysis the results of this data below.
+We will review the variables, fit multiple models, and make a suggestion to the client.
+The data set, `data.csv`, and all other files used in this project can be found on our [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
 
 # Exploring the Data
 
 ## Variables
 
-In the data set provided by the client there are four tissue types which are abbreviated as END, IT, LM, and UM.  This can be found in the `tissu` column.  The two precipitation levels, control and drought, are in the `treatment` column.  The time component of the experiment is not simply one variable.  The `time` column consists of six different times, with six being denoted by the first six letters of the alphabet. In addition to `time`, the column `dayPeriod` indicates whether the measurement was taken in the day or at night. Time points C and D appear to correspond to a `dayPeriod` of night, while all other time points are during the day. Note, the measurements for the starch contents can be found in the `StarchNscTissue` and each sample number can be found in the `sample` column.
+In the data set provided by the client there are four tissue types which are abbreviated as END, IT, LM, and UM.
+This can be found in the `tissu` column.
+The two precipitation levels, control and drought, are in the `treatment` column.
+The time component of the experiment is not simply one variable.
+The `time` column consists of six different times, with six being denoted by the first six letters of the alphabet.
+In addition to `time`, the column `dayPeriod` indicates whether the measurement was taken in the day or at night.
+Time points C and D appear to correspond to a `dayPeriod` of night, while all other time points are during the day.
+Note, the measurements for the starch contents can be found in the `StarchNscTissue` and each sample number can be found in the `sample` column.
 
-The data set provided by the client also includes variables that indicate the physical location of where the measurement was taken within a sample.  These are represented the columns `row`, `col`, and `chamber` with the latter being in the form `row`-`col` for each respective entry. The possible values of `row` and `col` range from one to four. Also, since the experiment was carried out at two locations which is represented by the `campagne` column.  
-
+The data set provided by the client also includes variables that indicate the physical location of where the measurement was taken within a sample.
+These are represented the columns `row`, `col`, and `chamber` with the latter being in the form `row`-`col` for each respective entry.
+The possible values of `row` and `col` range from one to four.
+Also, since the experiment was carried out at two locations which is represented by the `campagne` column.
 
 ### Changes made to the variables in the original data set
 
-Note there were a couple of problems with the original data set.  Initially the `time` column included a seventh time, A'.  Since this did not follow the format of the other time points and had substantially fewer occurrences in the data, we assumed this was a mistake.  Therefore, we manually changed all occurrences of A' to A.
+Note there were a couple of problems with the original data set.
+Initially the `time` column included a seventh time, A'.
+Since this did not follow the format of the other time points and had substantially fewer occurrences in the data, we assumed this was a mistake.
+Therefore, we manually changed all occurrences of A' to A.
 
-The other potential issue was in the `chamber` column.  As stated above this column should be a combination of `row` and `col`, but the original data set was treating it as a date.  For example if one sample has the values `row` $=1$ and `col` $=4$, the result of `chamber` should be $1-4$.  Instead the original data set was showing January 4th.  We chose to manually change this to the correct format as well.
-
+The other potential issue was in the `chamber` column.
+As stated above this column should be a combination of `row` and `col`, but the original data set was treating it as a date.
+For example if one sample has the values `row` $=1$ and `col` $=4$, the result of `chamber` should be $1-4$.
+Instead the original data set was showing January 4th.
+We chose to manually change this to the correct format as well.
 
 ## Summary Statistics
 
-While some of the variables outlined above are numeric, most can be treated as categorical.  The lone exception to this is the starch content.  The table below shows some summary statistics for the starch content.  This includes not only the summaries of all 408 measurements, but also the summaries based on the two values of `campagne` and `dayPeriod`.
-
+While some of the variables outlined above are numeric, most can be treated as categorical.
+The lone exception to this is the starch content.
+The table below shows some summary statistics for the starch content.
+This includes not only the summaries of all 408 measurements, but also the summaries based on the two values of `campagne` and `dayPeriod`.
 
 ```{r}
 #| label: fig-abbrevstats
@@ -130,13 +151,20 @@ combined_summary <- bind_rows(overall_summary, location_summary, dayperiod_summa
 kable(combined_summary, format = "markdown", caption = "Summary statistics of starch content.")
 ```
 
-For starch contents across all measurements, the values range from about 0.019 to 7.898 with a median of roughly 1.430 and a mean of 1.925.  The location of the median and mean with respect to the minimum and maximum is an early sign that the starch contents could be skewed and thus non-normal in distribution.
+For starch contents across all measurements, the values range from about 0.019 to 7.898 with a median of roughly 1.430 and a mean of 1.925.
+The location of the median and mean with respect to the minimum and maximum is an early sign that the starch contents could be skewed and thus non-normal in distribution.
 
-When comparing the two locations (`campagne`) where the experiment was replicated, we can see the 184 measurements from the first location seems to have lower values on average than the 224 measurements from location 2.  There is a smaller difference in these metrics when comparing measurements taken in the day versus those taken in the night. Note over twice as many measurements were taken in the day.  
+When comparing the two locations (`campagne`) where the experiment was replicated, we can see the 184 measurements from the first location seems to have lower values on average than the 224 measurements from location 2.
+There is a smaller difference in these metrics when comparing measurements taken in the day versus those taken in the night.
+Note over twice as many measurements were taken in the day.
 
-To generate a table of summary statistics that account for more of the variables see *Appendix A - R Code*.  That table is not included here due to its larger size. 
+To generate a table of summary statistics that account for more of the variables see *Appendix A - R Code*.
+That table is not included here due to its larger size.
 
-As previously noted, the table above indicates the starch contents may be skewed and thus non-normal.  This can be evaluated through a histogram and Q-Q plot.  The histogram below supports our suspicion that the data is skewed and the Q-Q plot confirms the measure is non-normal.  Note, all 408 measurements of starch content are used in the plots.
+As previously noted, the table above indicates the starch contents may be skewed and thus non-normal.
+This can be evaluated through a histogram and Q-Q plot.
+The histogram below supports our suspicion that the data is skewed and the Q-Q plot confirms the measure is non-normal.
+Note, all 408 measurements of starch content are used in the plots.
 
 ```{r}
 #| label: fig-normallity
@@ -168,32 +196,22 @@ ggplot(data, aes(sample = StarchNscTissue)) +
 
 ```
 
-
 ## Relationships among variables
-
-
-
 
 # Potential models
 
-The replication mentioned above suggests a mixed model approach is needed.  This is due to the replication being a random effect.  The simplest case of a this type of model is a linear mixed model.  To use this, the residuals of the model must be approximately normally distributed.
-
-
-
-
-
+The replication mentioned above suggests a mixed model approach is needed.
+This is due to the replication being a random effect.
+The simplest case of a this type of model is a linear mixed model.
+To use this, the residuals of the model must be approximately normally distributed.
 
 ## How explanatory variables can be used
 
-(talk about nesting vs non-nesting methods I guess.  Just introduce the idea before we actually make the models.)
+(talk about nesting vs non-nesting methods I guess. Just introduce the idea before we actually make the models.)
 
 # Summary Statistics
 
-
 **Summary_Statistic**
-
-
-
 
 ```{r}
 #| label: fig-2-sumstats
@@ -285,7 +303,122 @@ ggplot(data, aes(x = time, y = StarchNscTissue, color = treatment, group = treat
 
 ```
 
-# Model : Mixed Effects Model with Interactions In this model, we include interactions between tissu, treatment, and dayPeriod to evaluate their combined effects on StarchNscTissue.
+## Model : Mixed Effects Model with Interactions
+
+``` sas
+/* Mixed Model*/
+proc mixed data=data method=reml plots=(residualpanel);
+    class treatment tissu dayPeriod campagne chamber;
+    model StarchNscTissue = treatment|tissu|dayPeriod;
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
+    random campagne chamber sample;
+run;
+```
+
+**Output**
+
+![Fig-1](Screenshot%20(166).png)
+
+**Interpretation** In this model, we include interactions between tissu, treatment, and dayPeriod to evaluate their combined effects on StarchNscTissue.
+
+-   Treatment and tissue type have significant effects on starch content, with tissue type having the strongest effect.
+
+-   The interaction between treatment and tissue is also significant, indicating that the impact of treatment on starch content depends on the type of tissue.
+
+-   DayPeriod shows a weak effect, and interactions involving dayPeriod are not significant at the 5% level.
+
+These results suggest that the model effectively captures differences in starch content across treatments and tissue types, with some minor time-of-day effects.
+Further exploration could involve focusing on treatment and tissue type differences, as well as investigating any practical relevance of the marginal effects of dayPeriod.
+
+![Fig-2](LSmean-1.jpg)
+
+**Interpretation**
+
+![Fig-3](LSmean-2.jpg)
+
+**Interpretation**
+
+![Fig-4](Hist-1.jpg) 
+
+**Interpretation**
+
+##Split Plot Model
+
+``` sas
+/* Split Plot*/
+proc mixed data=data plots=(residualpanel);
+    class campagne treatment chamber dayPeriod tissu;
+    model StarchNscTissue = treatment | dayPeriod | tissu / ddfm=kr;
+    random sample campagne chamber(campagne) dayPeriod*chamber(campagne);
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
+run;
+```
+**Output**
+
+![Fig-1](split_output.png)
+**Interpretation**
+
+![Fig-2](split-ls-1.png)
+**Interpretation**
+
+![Fig-3](split-ls-2.png)
+**Interpretation**
+
+![Fig-4](split_res.png)
+
+**Interpretation**
+
+##Nested Model
+
+``` sas
+/* Hierarchial Nested Model*/
+
+proc mixed data=data method=reml plots=(residualpanel);
+    class treatment tissu dayPeriod campagne chamber sample;
+    model StarchNscTissue = treatment | tissu | dayPeriod;
+    random campagne chamber(campagne) sample(chamber*campagne);
+    lsmeans treatment tissu dayPeriod / pdiff=all cl adjust=tukey;
+run;
+
+```
+**Output**
+
+![Fig-1](nested_output.png)
+**Interpretation**
+
+![Fig-2](nested.ls-1.png)
+**Interpretation**
+
+![Fig-3](nested.ls-2.png)
+**Interpretation**
+
+![Fig-4](nested_res.png)
+
+##GLMM Model
+
+``` sas
+/* GLMM Model */
+proc glimmix data=data method=laplace plots=(residualpanel);
+    class tissu treatment dayPeriod campagne sample chamber;
+    model StarchNscTissue = tissu|treatment|dayPeriod / dist=gamma;
+    random campagne sample chamber;
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
+run;
+
+```
+**Output**
+
+![Fig-1](glmm_output.png)
+**Interpretation**
+
+![Fig-2](glmm.ls.png)
+**Interpretation**
+
+
+
+![Fig-3](glmm_res.png)
+
+
 
 ```{r}
 #| label: fig-3
@@ -333,6 +466,224 @@ acf(resid(model), main = "Autocorrelation of Residuals")
 ```
 
 ## Model 3: Nested Model for DayPeriod and Time Effects In this model, dayPeriod is used as a broader time effect, with time nested within dayPeriod.
+
+``` sas
+/* Mixed Model*/
+proc mixed data=data method=reml plots=(residualpanel);
+    class treatment tissu dayPeriod campagne chamber;
+    model StarchNscTissue = treatment|tissu|dayPeriod;
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
+    random campagne chamber sample;
+run;
+```
+
+This model also includes campagne, sample, and chamber as random effects.
+
+```{r}
+#| label: fig-4
+#| echo: false
+#| fig-cap: " "
+
+# Mixed Effects Model with Nested Time within DayPeriod
+model3 <- lmer(StarchNscTissue ~ tissu + treatment + dayPeriod + dayPeriod:time + 
+               (1 | campagne) + (1 | sample) + (1 | chamber), data = data)
+
+# Summary of the model
+summary(model3)
+
+# Check model fit using AIC and BIC
+AIC(model3)
+BIC(model3)
+
+# Test significance of nested terms
+anova(model3)
+
+```
+
+```{r}
+#| label: fig-5
+#| echo: false
+#| fig-cap: " "
+# Q-Q plot for residuals
+qqnorm(residuals(model3))
+qqline(residuals(model3))
+shapiro.test(residuals(model3))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(model3), residuals(model3))
+abline(h = 0, col = "red")
+
+# Autocorrelation of residuals
+library(ggplot2)
+acf(resid(model3), main = "Autocorrelation of Residuals")
+```
+
+```{r}
+#| label: fig-6
+#| echo: false
+#| fig-cap: " "
+
+# Model 2 - Interaction effects
+model_2 <- lm(StarchNscTissue ~ treatment * tissu * dayPeriod + campagne, data = data)
+summary(model_2)
+
+```
+
+```{r}
+# Q-Q plot for residuals
+qqnorm(residuals(model_2))
+qqline(residuals(model_2))
+shapiro.test(residuals(model_2))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(model_2), residuals(model_2))
+abline(h = 0, col = "red")
+hist(residuals(model_2), breaks = 30, main = "Histogram of Residuals", 
+     xlab = "Residuals", col = "lightblue", border = "black")
+```
+
+```{r}
+#| label: fig-7
+#| echo: false
+#| fig-cap: " "
+
+# Model 3 - Mixed model with chamber as random effect
+model_3 <- lmer(StarchNscTissue ~ treatment * tissu * dayPeriod + campagne + (1 | chamber), data = data)
+summary(model_3)
+
+```
+
+```{r}
+# Q-Q plot for residuals
+qqnorm(residuals(model_3))
+qqline(residuals(model_3))
+shapiro.test(residuals(model_3))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(model_3), residuals(model_3))
+abline(h = 0, col = "red")
+hist(residuals(model_3), breaks = 30, main = "Histogram of Residuals", 
+     xlab = "Residuals", col = "lightblue", border = "black")
+```
+
+##Hierarchial Nested Structured
+
+```{r}
+# Load necessary library
+library(lme4)
+
+# Fit the model with nested random effects
+modeln <- lmer(StarchNscTissue ~ treatment * tissu * dayPeriod + 
+                (1 | campagne) + (1 | campagne:chamber) + (1 | campagne:chamber:sample), 
+              data = data)
+
+# Summary of the model
+summary(modeln)
+
+```
+
+```{r}
+# Q-Q plot for residuals
+qqnorm(residuals(modeln))
+qqline(residuals(modeln))
+shapiro.test(residuals(modeln))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(modeln), residuals(modeln))
+abline(h = 0, col = "red")
+hist(residuals(modeln), breaks = 30, main = "Histogram of Residuals", 
+     xlab = "Residuals", col = "lightblue", border = "black")
+
+```
+
+## GLMM
+
+```{r}
+# Load necessary libraries
+library(glmmTMB)
+
+# GLMM using glmmTMB with Gamma family
+model_glmm_tmb <- glmmTMB(
+  StarchNscTissue ~ tissu * treatment * dayPeriod + 
+  (1 | campagne) + (1 | sample) + (1 | chamber),
+  data = data, 
+  family = Gamma(link = "log")  # Specify link if needed; log is common for Gamma
+)
+
+# Summary of the model
+summary(model_glmm_tmb)
+
+
+```
+
+```{r}
+# Load necessary libraries
+library(glmmTMB)
+library(ggplot2)
+
+# Extract residuals from the model
+residuals_glmm <- residuals(model_glmm_tmb, type = "pearson")
+
+# 1. Q-Q Plot with Q-Q Line
+qqnorm(residuals_glmm, main = "Q-Q Plot of Pearson Residuals")
+qqline(residuals_glmm, col = "red")
+
+# 2. Histogram of Residuals
+ggplot(data.frame(residuals_glmm), aes(x = residuals_glmm)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "black", fill = "lightblue") +
+  geom_density(color = "red") +
+  labs(
+    title = "Histogram of Pearson Residuals",
+    x = "Pearson Residuals",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+#| label: fig-3
+#| echo: false
+#| fig-cap: " "
+
+# Load necessary libraries
+library(lme4)
+library(lmerTest)  # for p-values
+
+# Mixed Effects Model with Interactions
+model <- lmer(StarchNscTissue ~ tissu * treatment * dayPeriod + 
+               (1 | campagne) + (1 | sample) + (1 | chamber), data = data)
+
+# Summary of the model
+summary(model)
+
+# Check model fit using AIC and BIC
+AIC(model)
+BIC(model)
+
+# Test significance of interaction terms
+anova(model)
+
+
+```
+
+## Checking assumption
+
+```{r}
+# Q-Q plot for residuals
+qqnorm(residuals(model))
+qqline(residuals(model))
+shapiro.test(residuals(model))
+# Residuals vs. Fitted plot for homogeneity of variance
+plot(fitted(model), residuals(model))
+abline(h = 0, col = "red")
+# Autocorrelation of residuals
+library(ggplot2)
+acf(resid(model), main = "Autocorrelation of Residuals")
+
+
+
+
+```
+
+## Model 3: Nested Model for DayPeriod and Time Effects In this model, dayPeriod is used as a broader time effect, with time nested within dayPeriod.
+
 This model also includes campagne, sample, and chamber as random effects.
 
 ```{r}
@@ -419,11 +770,7 @@ abline(h = 0, col = "red")
 
 # Conclusion
 
-
-
 GitHub page found [here](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
-
-
 
 \newpage
 
@@ -454,11 +801,9 @@ knitr::kable(head(data), format = 'markdown')
 
 ```
 
-
 \newpage
 
 # Appendix B - SAS Code
-
 
 ``` sas
 
