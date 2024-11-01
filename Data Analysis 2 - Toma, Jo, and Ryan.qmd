@@ -305,19 +305,11 @@ ggplot(data, aes(x = time, y = StarchNscTissue, color = treatment, group = treat
 
 ## Model : Mixed Effects Model with Interactions
 
-``` sas
-/* Mixed Model*/
-proc mixed data=data method=reml plots=(residualpanel);
-    class treatment tissu dayPeriod campagne chamber;
-    model StarchNscTissue = treatment|tissu|dayPeriod;
-    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
-    random campagne chamber sample;
-run;
-```
+
 
 **Output**
 
-![Fig-1](Screenshot%20(166).png)
+![Fig-1](Screenshot%20(166).png){width=3in}
 
 **Interpretation** In this model, we include interactions between tissu, treatment, and dayPeriod to evaluate their combined effects on StarchNscTissue.
 
@@ -454,20 +446,11 @@ Overall, the residual diagnostics suggest that the model mostly meets the assump
 
 ##Nested Model
 
-``` sas
-/* Hierarchial Nested Model*/
 
-proc mixed data=data method=reml plots=(residualpanel);
-    class treatment tissu dayPeriod campagne chamber sample;
-    model StarchNscTissue = treatment | tissu | dayPeriod;
-    random campagne chamber(campagne) sample(chamber*campagne);
-    lsmeans treatment tissu dayPeriod / pdiff=all cl adjust=tukey;
-run;
-```
 
 **Output**
 
-![Fig-1](nested_output.png)
+![Fig-1](nested_output.jpg){width=3in}
 
 **Interpretation:**
 
@@ -515,7 +498,9 @@ This table tests the significance of each fixed effect and their interactions.
 In conclusion, **treatment** and **tissue type** are the primary factors affecting starch content, with the interaction indicating that the effect of treatment depends on tissue type.
 The time of collection (Day vs. Night) does not significantly affect starch content in this model.
 
-![Fig-2](nested.ls-1.png) **Interpretation:**
+![Fig-2](nested.ls-1.jpg)
+
+**Interpretation:**
 
 ### Summary
 
@@ -527,7 +512,9 @@ The time of collection (Day vs. Night) does not significantly affect starch cont
 
 In summary, **treatment, tissue type, and collection time** all influence starch content, with the **Control treatment, LM and UM tissues, and Night period** showing higher values.
 
-![Fig-3](nested.ls-2.png) **Interpretation:**
+![Fig-3](nested.ls-2.jpg)
+
+**Interpretation:**
 
 ### Summary of Findings
 
@@ -555,19 +542,11 @@ The **DayPeriod** does not significantly impact starch content
 
 In conclusion, the model generally meets the assumptions of normality and homoscedasticity, but there are minor deviations that may warrant further investigation, particularly with the slight increase in residual variance at higher predicted values.
 
-``` sas
-/* GLMM Model */
-proc glimmix data=data method=laplace plots=(residualpanel);
-    class tissu treatment dayPeriod campagne sample chamber;
-    model StarchNscTissue = tissu|treatment|dayPeriod / dist=gamma;
-    random campagne sample chamber;
-    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
-run;
-```
+
 
 **Output**
 
-![Fig-1](glmm_output.png)
+![Fig-1](glmm_output.png){width=3in}
 
 **Interpretation:**
 
@@ -676,223 +655,27 @@ The model appears to fit the data reasonably well, although addressing or invest
 Based on the above discussion, we would like to fit the **Mixed Model** for this data set. As we can see from the fit statistics and diagnostic result, the mixed model gives us better fitting than the Nested and GLMM models. In the Hierarchical Nested Model, the AIC, BIC, and AICC are comparatively a little bit higher than the Mixed Model, and residual plots remain the same for both plots. Although the AIC, BICC, and AICC are lower in GLMM than in the Mixed Model, the assumptions hold better in the Mixed Model. So, it would be better to fit a **Mixed Model** to ignore unnecessary complexity in the model structure.
 
 
-```{r}
-#| label: fig-3
-#| echo: false
-#| fig-cap: " "
-
-# Load necessary libraries
-library(lme4)
-library(lmerTest)  # for p-values
-
-# Mixed Effects Model with Interactions
-model <- lmer(StarchNscTissue ~ tissu * treatment * dayPeriod + 
-               (1 | campagne) + (1 | sample) + (1 | chamber), data = data)
-
-# Summary of the model
-summary(model)
-
-# Check model fit using AIC and BIC
-AIC(model)
-BIC(model)
-
-# Test significance of interaction terms
-anova(model)
-
-
-```
-
-## Checking assumption
-
-```{r}
-# Q-Q plot for residuals
-qqnorm(residuals(model))
-qqline(residuals(model))
-shapiro.test(residuals(model))
-# Residuals vs. Fitted plot for homogeneity of variance
-plot(fitted(model), residuals(model))
-abline(h = 0, col = "red")
-# Autocorrelation of residuals
-library(ggplot2)
-acf(resid(model), main = "Autocorrelation of Residuals")
 
 
 
 
-```
+
+
+
 
 ## Model 3: Nested Model for DayPeriod and Time Effects In this model, dayPeriod is used as a broader time effect, with time nested within dayPeriod.
 
-``` sas
-/* Mixed Model*/
-proc mixed data=data method=reml plots=(residualpanel);
-    class treatment tissu dayPeriod campagne chamber;
-    model StarchNscTissue = treatment|tissu|dayPeriod;
-    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
-    random campagne chamber sample;
-run;
-```
+
 
 This model also includes campagne, sample, and chamber as random effects.
 
-```{r}
-#| label: fig-4
-#| echo: false
-#| fig-cap: " "
-
-# Mixed Effects Model with Nested Time within DayPeriod
-model3 <- lmer(StarchNscTissue ~ tissu + treatment + dayPeriod + dayPeriod:time + 
-               (1 | campagne) + (1 | sample) + (1 | chamber), data = data)
-
-# Summary of the model
-summary(model3)
-
-# Check model fit using AIC and BIC
-AIC(model3)
-BIC(model3)
-
-# Test significance of nested terms
-anova(model3)
-
-```
-
-```{r}
-#| label: fig-5
-#| echo: false
-#| fig-cap: " "
-# Q-Q plot for residuals
-qqnorm(residuals(model3))
-qqline(residuals(model3))
-shapiro.test(residuals(model3))
-# Residuals vs. Fitted plot for homogeneity of variance
-plot(fitted(model3), residuals(model3))
-abline(h = 0, col = "red")
-
-# Autocorrelation of residuals
-library(ggplot2)
-acf(resid(model3), main = "Autocorrelation of Residuals")
-```
-
-```{r}
-#| label: fig-6
-#| echo: false
-#| fig-cap: " "
-
-# Model 2 - Interaction effects
-model_2 <- lm(StarchNscTissue ~ treatment * tissu * dayPeriod + campagne, data = data)
-summary(model_2)
-
-```
-
-```{r}
-# Q-Q plot for residuals
-qqnorm(residuals(model_2))
-qqline(residuals(model_2))
-shapiro.test(residuals(model_2))
-# Residuals vs. Fitted plot for homogeneity of variance
-plot(fitted(model_2), residuals(model_2))
-abline(h = 0, col = "red")
-hist(residuals(model_2), breaks = 30, main = "Histogram of Residuals", 
-     xlab = "Residuals", col = "lightblue", border = "black")
-```
-
-```{r}
-#| label: fig-7
-#| echo: false
-#| fig-cap: " "
-
-# Model 3 - Mixed model with chamber as random effect
-model_3 <- lmer(StarchNscTissue ~ treatment * tissu * dayPeriod + campagne + (1 | chamber), data = data)
-summary(model_3)
-
-```
-##Mixed Model
-[Note: This histogram is better looking than the SAS plots. Can we keep these R plots instead of SAS?]
-```{r}
-# Q-Q plot for residuals
-qqnorm(residuals(model_3))
-qqline(residuals(model_3))
-shapiro.test(residuals(model_3))
-# Residuals vs. Fitted plot for homogeneity of variance
-plot(fitted(model_3), residuals(model_3))
-abline(h = 0, col = "red")
-hist(residuals(model_3), breaks = 30, main = "Histogram of Residuals", 
-     xlab = "Residuals", col = "lightblue", border = "black")
-```
-
-##Hierarchial Nested Structured
-
-```{r}
-# Load necessary library
-library(lme4)
-
-# Fit the model with nested random effects
-modeln <- lmer(StarchNscTissue ~ treatment * tissu * dayPeriod + 
-                (1 | campagne) + (1 | campagne:chamber) + (1 | campagne:chamber:sample), 
-              data = data)
-
-# Summary of the model
-summary(modeln)
-
-```
-[Note: Here as well. Plots are better.]
-```{r}
-# Q-Q plot for residuals
-qqnorm(residuals(modeln))
-qqline(residuals(modeln))
-shapiro.test(residuals(modeln))
-# Residuals vs. Fitted plot for homogeneity of variance
-plot(fitted(modeln), residuals(modeln))
-abline(h = 0, col = "red")
-hist(residuals(modeln), breaks = 30, main = "Histogram of Residuals", 
-     xlab = "Residuals", col = "lightblue", border = "black")
-
-```
-
-## GLMM
-
-```{r}
-# Load necessary libraries
-library(glmmTMB)
-
-# GLMM using glmmTMB with Gamma family
-model_glmm_tmb <- glmmTMB(
-  StarchNscTissue ~ tissu * treatment * dayPeriod + 
-  (1 | campagne) + (1 | sample) + (1 | chamber),
-  data = data, 
-  family = Gamma(link = "log")  # Specify link if needed; log is common for Gamma
-)
-
-# Summary of the model
-summary(model_glmm_tmb)
 
 
-```
-[Here as well]
-```{r}
-# Load necessary libraries
-library(glmmTMB)
-library(ggplot2)
 
-# Extract residuals from the model
-residuals_glmm <- residuals(model_glmm_tmb, type = "pearson")
 
-# 1. Q-Q Plot with Q-Q Line
-qqnorm(residuals_glmm, main = "Q-Q Plot of Pearson Residuals")
-qqline(residuals_glmm, col = "red")
 
-# 2. Histogram of Residuals
-ggplot(data.frame(residuals_glmm), aes(x = residuals_glmm)) +
-  geom_histogram(aes(y = ..density..), bins = 30, color = "black", fill = "lightblue") +
-  geom_density(color = "red") +
-  labs(
-    title = "Histogram of Pearson Residuals",
-    x = "Pearson Residuals",
-    y = "Density"
-  ) +
-  theme_minimal()
 
-```
+# Notes for US CHECK 
 
 Few notes-
 1. Can we keep the model output from SAS but plots fro R? what do you think?
@@ -944,16 +727,39 @@ knitr::kable(head(data), format = 'markdown')
 
 ``` sas
 
-data rptm_means;
-input Inoculation_Method $ Thickness $ @@; 
-do Week=1 to 5 by 1; 
-    input mu @@; 
-    output; 
-end;
-datalines;
-Dry 1/4 4.2573 4.246 4.474 4.3327 4.0127
-Dry 1/8 5.2907 4.9513 5.2013 5.2073 4.9713
-Wet 1/4 5.4013 5.5727 5.55 5.4873 5.3807
-Wet 1/8 5.56 5.7793 5.6313 5.7153 5.62
-;
+/* Reading in csv file */
+FILENAME REFFILE '<enter your file path';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=data;
+	GETNAMES=YES;
+RUN;
+
+
+/* Mixed Model*/
+proc mixed data=data method=reml plots=(residualpanel);
+    class treatment tissu dayPeriod campagne chamber;
+    model StarchNscTissue = treatment|tissu|dayPeriod;
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
+    random campagne chamber sample;
+run;
+
+
+/* Hierarchial Nested Model*/
+proc mixed data=data method=reml plots=(residualpanel);
+    class treatment tissu dayPeriod campagne chamber sample;
+    model StarchNscTissue = treatment | tissu | dayPeriod;
+    random campagne chamber(campagne) sample(chamber*campagne);
+    lsmeans treatment tissu dayPeriod / pdiff=all cl adjust=tukey;
+run;
+
+/* GLMM Model */
+proc glimmix data=data method=laplace plots=(residualpanel);
+    class tissu treatment dayPeriod campagne sample chamber;
+    model StarchNscTissue = tissu|treatment|dayPeriod / dist=gamma;
+    random campagne sample chamber;
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
+run;
+
 ```
