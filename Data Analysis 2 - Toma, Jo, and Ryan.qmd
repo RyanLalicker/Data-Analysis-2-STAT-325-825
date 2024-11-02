@@ -65,7 +65,7 @@ The data set, `data.csv`, and all other files used in this project can be found 
 
 In the data set provided by the client there are four tissue types which are abbreviated as END, IT, LM, and UM.
 This can be found in the `tissu` column.
-The two precipitation levels, control and drought, are in the `treatment` column.
+The two precipitation levels, control and drought, are in the `treatment` column.  As the column name may suggest, this will be considered the treatment,.
 The time component of the experiment is not simply one variable.
 The `time` column consists of six different times, with six being denoted by the first six letters of the alphabet.
 In addition to `time`, the column `dayPeriod` indicates whether the measurement was taken in the day or at night.
@@ -175,6 +175,9 @@ Note, all 408 measurements of starch content are used in the plots.
 #| fig-subcap: 
 #|  - "Histogram of starch content."
 #|  - "Q-Q plot of starch content."
+#| fig-width: 6
+#| fig-height: 4
+
 library(ggplot2)
 
 ggplot(data, aes(x = StarchNscTissue)) +
@@ -198,128 +201,82 @@ ggplot(data, aes(sample = StarchNscTissue)) +
 
 ## Relationships among variables
 
+EXPLORE TRT AND TISSUE TYPES
+
+Now let's see how some of the other variables relate to the starch content.  First we can look at the four tissue types.  To do this we will use the boxplot below.  It appears the tissue types END and IT are similar to each other, as are LM and UM.  The two pairs seem quite a bit different though as LM and UM have both far higher values than the other two.  This indicates the tissue type could be significant.
+
+```{r}
+#| label: fig-tissue
+#| echo: false
+#| eval: true
+#| fig-cap: "Boxplot of starch contents by tissue types"
+#| fig-width: 4
+#| fig-height: 3
+
+ggplot(data, aes(x = tissu, y = StarchNscTissue)) +
+  geom_boxplot() +
+  labs(y = "Starch Content", x="Tissue Type") +
+  theme_minimal()
+
+```
+
+Another variable of that could have a major impact is the treatment.  If some samples get more water than others it would make sense to see more growth.  It is also possible that the time could impact the effect the water has on the starch content.  Below is a bar chart that separates measurements first by day and night, and then by the treatment while still showing the differences in tissue type.  Remember time points C and D are at night and the rest are during the day.
+
+```{r}
+#| label: fig-toma-graph
+#| echo: false
+#| eval: true
+#| fig-cap: "Barchat of starch content vs. tissue types, separating by treatment and day or night."
+#| fig-width: 5
+#| fig-height: 3.5
+
+ggplot(data, aes(x = tissu, y = StarchNscTissue, fill = treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ dayPeriod) +
+  labs(
+    x = "Tissue Type",
+    y = "Starch Content"
+  ) +
+  theme_minimal()
+
+```
+In the graph above we can see the starch content for measurements with the tissue types LM and UM are higher when given the control treatment instead of the drought treatment.  This is not as clear with the other two tissue types.  Additionally, the effect day and night have on the starch contents are not clear, as we saw in the summary statistics table above.  
+
+
 # Potential models
 
-The replication mentioned above suggests a mixed model approach is needed.
+The replication mentioned previously suggests a mixed model approach is needed.
 This is due to the replication being a random effect.
-The simplest case of a this type of model is a linear mixed model.
+The simplest case of this type of model is a linear mixed model.
 To use this, the residuals of the model must be approximately normally distributed.
 
 ## How explanatory variables can be used
 
 (talk about nesting vs non-nesting methods I guess. Just introduce the idea before we actually make the models.)
 
-# Summary Statistics
 
-**Summary_Statistic**
 
-```{r}
-#| label: fig-2-sumstats
-#| echo: false
-#| fig-cap: "jjj "
-
-data <- read.csv("data.csv")
-# Load necessary libraries
-library(dplyr)
-library(ggplot2)
-
-# Summary statistics for StarchNscTissue by tissue type, treatment, dayPeriod, and time
-summary_data <- data %>%
-  group_by(tissu, treatment, dayPeriod, time) %>%
-  summarize(
-    mean_Starch = mean(StarchNscTissue, na.rm = TRUE),
-    sd_Starch = sd(StarchNscTissue, na.rm = TRUE),
-    median_Starch = median(StarchNscTissue, na.rm = TRUE),
-    min_Starch = min(StarchNscTissue, na.rm = TRUE),
-    max_Starch = max(StarchNscTissue, na.rm = TRUE),
-    n = n()
-  )
-
-print(summary_data)
-
-## 1. Line Plot of Mean Starch Content by Time
-##This plot shows the trend of mean starch content across time segments for each tissue type and treatment.
-
-ggplot(summary_data, aes(x = time, y = mean_Starch, color = treatment, group = treatment)) +
-  geom_line() +
-  geom_point() +
-  facet_grid(tissu ~ dayPeriod) +
-  labs(
-    title = "Mean Starch Content by Time, Treatment, and Tissue Type",
-    x = "Time Segment",
-    y = "Mean Starch Content"
-  ) +
-  theme_minimal()
-##2. Bar Plot of Mean Starch Content by Tissue Type and Treatment
-#This bar plot can help compare the mean starch content between treatments for each tissue type, averaged over all time points.
-
-ggplot(summary_data, aes(x = tissu, y = mean_Starch, fill = treatment)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  facet_wrap(~ dayPeriod) +
-  labs(
-    title = "Mean Starch Content by Tissue Type and Treatment",
-    x = "Tissue Type",
-    y = "Mean Starch Content"
-  ) +
-  theme_minimal()
-
-##3. Error Bar Plot with Mean and Standard Deviation
-#An error bar plot provides a visual of mean starch content with variability (standard deviation) across time, separated by tissue and treatment.
-
-ggplot(summary_data, aes(x = time, y = mean_Starch, color = treatment, group = treatment)) +
-  geom_line() +
-  geom_point() +
-  geom_errorbar(aes(ymin = mean_Starch - sd_Starch, ymax = mean_Starch + sd_Starch), width = 0.2) +
-  facet_grid(tissu ~ dayPeriod) +
-  labs(
-    title = "Mean Starch Content with Standard Deviation by Time and Treatment",
-    x = "Time Segment",
-    y = "Mean Starch Content"
-  ) +
-  theme_minimal()
-
-##Box_Plot
-ggplot(data, aes(x = tissu, y = StarchNscTissue, fill = treatment)) +
-  geom_boxplot() +
-  facet_wrap(~ dayPeriod) +
-  labs(
-    title = "Boxplot of Starch Content by Tissue Type and Treatment",
-    x = "Tissue Type",
-    y = "Starch Content"
-  ) +
-  theme_minimal()
-
-##Box_Plot with Interaction
-ggplot(data, aes(x = time, y = StarchNscTissue, color = treatment, group = treatment)) +
-  geom_line(stat = "summary", fun = mean) +
-  geom_point(stat = "summary", fun = mean) +
-  facet_wrap(~ dayPeriod) +
-  labs(
-    title = "Interaction Plot: Starch Content by Time and Treatment within DayPeriod",
-    x = "Time Segment",
-    y = "Mean Starch Content"
-  ) +
-  theme_minimal()
-
-```
 
 ## Model : Mixed Effects Model with Interactions
 
+The first model we want to consider is a linear mixed model with fixed effects treatment, tissue type, and the period of the day, along with random effects for the larger location (`campagne`), the sample specific location (`chamber`), and the sample itself.  Additionally, this model includes interaction terms for the fixed effects.  This can be expressed as
+
+$$
+y_{ijklm} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} + v_{m} + w_{n} + \epsilon_{ijklm}
+$$
+where $y_{ijklm}$ represents the starch content, $\mu$ is the overall mean, $\tau_i$ is the fixed effect for the $i$th treatment, $\alpha_j$ is the fixed effect for the $j$th tissue type, and $\beta_k$ is the fixed effect for the period of the day.  For the random effects $u_{l}$ is the effect for the `campagne` variable, $v_{m}$ is the effect for `chamber`, and $w_{n}$ is the effect for the sample.  The error term is $\epsilon_{ijklm}$.  The remaining terms represent the interaction between the fixed effects.  For instance $(\tau \alpha)_{ij}$ is the interaction effect of the treatment and tissue type, while $(\tau \alpha \beta)_{ijk}$ represents the three-way interaction of all fixed effects in the model.
+
+The model was applied in SAS and all code can be found in *Appendix B - SAS Code*.  The figure below shows three tables that are a part of the SAS output.  The *Fit Statistics* tables suggests we have a reasonably fitting model.  Note these values can also be used for comparison later.  
 
 
-**Output**
+![SAS output of *COvariance Parameter Estimates*, *Fit Statistics*, and *Type 3 Tests of Fixed Effects* for the first proposed model](Screenshot%20(166).png){width=3in}
 
-![Fig-1](Screenshot%20(166).png){width=3in}
 
-**Interpretation** In this model, we include interactions between tissu, treatment, and dayPeriod to evaluate their combined effects on StarchNscTissue.
+The *Type 3 Tests of Fixed Effects* reports what fixed effects are registering as significant.  With p-values less than 0.0001 both the tissue and the treatment by tissue interaction are highly significant.  The treatment effect on its own is still significant at a significance level of 5%.  The day period and its interaction with the tissue type are marginally significant, but neither are at the 5% level.  The remaining interactions are not significant either.
 
-### Fit Statistics
 
-These statistics suggest a reasonably fitting model but can be used for comparison if you are evaluating alternative models.
 
-### Type 3 Tests of Fixed Effects
 
-This table shows the fixed effects and their interactions, with F-tests and associated p-values.
 
 ### Conclusion
 
