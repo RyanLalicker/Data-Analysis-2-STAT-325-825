@@ -1,0 +1,662 @@
+---
+title: "Data Analysis 2"
+authors: 
+  Maksuda Aktar Toma,
+  Jo Charbonneau,
+  Ryan Lalicker
+date: today
+date-format: long
+abstract: |
+  If we want an abstract it will go here.  References are in the form @placeHolder or [@placeHolder].  For more information see [here](https://www.youtube.com/watch?v=dQw4w9WgXcQ).
+execute: 
+  echo: false
+  warning: false
+columns: 2
+format:
+  pdf: 
+    extensions-dir: quarto-wordcount/_extensions/wordcount
+    fig-align: center
+    fig-width: 6
+    fig-height: 4
+bibliography: references.bib
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r, , fig.pos="H"}
+#| label: data-setup
+#| echo: false
+#| eval: true
+data <- read.csv("data.csv")
+```
+
+```{r, , fig.pos="H"}
+#| label: Scratch work
+#| echo: false
+#| eval: false
+
+num_unique_tissu <- length(unique(data$tissu))
+num_unique_tissu
+num_unique_time <- length(unique(data$time))
+num_unique_time
+time_counts <- table(data$time)
+time_counts
+num_unique_dp <- length(unique(data$dayPeriod))
+num_unique_dp
+table(data$campagne)
+num_unique_camp <- length(unique(data$campagne))
+```
+
+# Introduction
+
+Our clients conducted an experiment to determine the effect pine tissues, precipitation levels, time, and the interaction of these variables effects starch content.
+In total, 408 entries were recorded.
+The experiment was replicated at two locations as well and not all measurements within each replication were taken from the same sample location.
+(dont like that last line)
+
+We intend to analysis the results of this data below.
+We will review the variables, fit multiple models, and make a suggestion to the client.
+The data set, `data.csv`, and all other files used in this project can be found on our [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
+
+# Exploring the Data
+
+## Variables
+
+In the data set provided by the client there are four tissue types which are abbreviated as END, IT, LM, and UM.
+This can be found in the `tissu` column.
+The two precipitation levels, control and drought, are in the `treatment` column.
+As the column name may suggest, this will be considered the treatment,.
+The time component of the experiment is not simply one variable.
+The `time` column consists of six different times, with six being denoted by the first six letters of the alphabet.
+In addition to `time`, the column `dayPeriod` indicates whether the measurement was taken in the day or at night.
+Time points C and D appear to correspond to a `dayPeriod` of night, while all other time points are during the day.
+Note, the measurements for the starch contents can be found in the `StarchNscTissue` and each sample number can be found in the `sample` column.
+
+The data set provided by the client also includes variables that indicate the physical location of where the measurement was taken within a sample.
+These are represented the columns `row`, `col`, and `chamber` with the latter being in the form `row`-`col` for each respective entry.
+The possible values of `row` and `col` range from one to four.
+Also, since the experiment was carried out at two locations which is represented by the `campagne` column.
+
+### Changes made to the variables in the original data set
+
+Note there were a couple of problems with the original data set.
+Initially the `time` column included a seventh time, A'.
+Since this did not follow the format of the other time points and had substantially fewer occurrences in the data, we assumed this was a mistake.
+Therefore, we manually changed all occurrences of A' to A.
+
+The other potential issue was in the `chamber` column.
+As stated above this column should be a combination of `row` and `col`, but the original data set was treating it as a date.
+For example if one sample has the values `row` $=1$ and `col` $=4$, the result of `chamber` should be $1-4$.
+Instead the original data set was showing January 4th.
+We chose to manually change this to the correct format as well.
+
+## Summary Statistics
+
+While some of the variables outlined above are numeric, most can be treated as categorical.
+The lone exception to this is the starch content.
+The table below shows some summary statistics for the starch content.
+This includes not only the summaries of all 408 measurements, but also the summaries based on the two values of `campagne` and `dayPeriod`.
+
+```{r, , fig.pos="H"}
+#| label: fig-abbrevstats
+#| echo: false
+#| eval: true
+
+library(knitr)
+library(dplyr)
+
+overall_summary <- data %>%
+  summarize(
+    Mean = mean(StarchNscTissue, na.rm = TRUE),
+    Median = median(StarchNscTissue, na.rm = TRUE),
+    SD = sd(StarchNscTissue, na.rm = TRUE),
+    Min = min(StarchNscTissue, na.rm = TRUE),
+    Max = max(StarchNscTissue, na.rm = TRUE),
+    N = n()
+  ) %>%
+  mutate(Group = "Overall")
+
+# By Location (campagne)
+location_summary <- data %>%
+  group_by(campagne) %>%
+  summarize(
+    Mean = mean(StarchNscTissue, na.rm = TRUE),
+    Median = median(StarchNscTissue, na.rm = TRUE),
+    SD = sd(StarchNscTissue, na.rm = TRUE),
+    Min = min(StarchNscTissue, na.rm = TRUE),
+    Max = max(StarchNscTissue, na.rm = TRUE),
+    N = n()
+  ) %>%
+  mutate(Group = paste("campagne:", campagne))
+
+# By DayPeriod
+dayperiod_summary <- data %>%
+  group_by(dayPeriod) %>%
+  summarize(
+    Mean = mean(StarchNscTissue, na.rm = TRUE),
+    Median = median(StarchNscTissue, na.rm = TRUE),
+    SD = sd(StarchNscTissue, na.rm = TRUE),
+    Min = min(StarchNscTissue, na.rm = TRUE),
+    Max = max(StarchNscTissue, na.rm = TRUE),
+    N = n()
+  ) %>%
+  mutate(Group = paste("dayPeriod:", dayPeriod))
+
+# Combine tables
+combined_summary <- bind_rows(overall_summary, location_summary, dayperiod_summary) %>%
+  arrange(factor(Group, levels = c("Overall", unique(location_summary$Group), unique(dayperiod_summary$Group)))) %>%
+  select(Group, N, Mean, Median, SD, Min, Max)
+
+# Display the table
+kable(combined_summary, format = "markdown", caption = "Summary statistics of starch content.")
+```
+
+For starch contents across all measurements, the values range from about 0.019 to 7.898 with a median of roughly 1.430 and a mean of 1.925.
+The location of the median and mean with respect to the minimum and maximum is an early sign that the starch contents could be skewed and thus non-normal in distribution.
+
+When comparing the two locations (`campagne`) where the experiment was replicated, we can see the 184 measurements from the first location seems to have lower values on average than the 224 measurements from location 2.
+There is a smaller difference in these metrics when comparing measurements taken in the day versus those taken in the night.
+Note over twice as many measurements were taken in the day.
+
+To generate a table of summary statistics that account for more of the variables see *Appendix A - R Code*.
+That table is not included here due to its larger size.
+
+As previously noted, the table above indicates the starch contents may be skewed and thus non-normal.
+This can be evaluated through a histogram and Q-Q plot.
+The histogram below supports our suspicion that the data is skewed and the Q-Q plot confirms the measure is non-normal.
+Note, all 408 measurements of starch content are used in the plots.
+
+```{r, , fig.pos="H"}
+#| label: fig-normallity
+#| echo: false
+#| eval: true
+#| layout-ncol: 2
+#| fig-cap: "Plots used to check normallity assumption."
+#| fig-subcap: 
+#|  - "Histogram of starch content."
+#|  - "Q-Q plot of starch content."
+#| fig-width: 6
+#| fig-height: 4
+
+library(ggplot2)
+
+ggplot(data, aes(x = StarchNscTissue)) +
+  geom_histogram(binwidth = 0.5, color = "black", fill = "skyblue") +
+  labs(
+    x = "StarchNscTissue",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+ggplot(data, aes(sample = StarchNscTissue)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(
+    x = "Theoretical Quantiles",
+    y = "Sample Quantiles"
+  ) +
+  theme_minimal()
+
+```
+
+## Relationships among variables
+
+EXPLORE TRT AND TISSUE TYPES
+
+Now let's see how some of the other variables relate to the starch content.
+First we can look at the four tissue types.
+To do this we will use the boxplot below.
+It appears the tissue types END and IT are similar to each other, as are LM and UM.
+The two pairs seem quite a bit different though as LM and UM have both far higher values than the other two.
+This indicates the tissue type could be significant.
+
+```{r, , fig.pos="H"}
+#| label: fig-tissue
+#| echo: false
+#| eval: true
+#| fig-cap: "Boxplot of starch contents by tissue types"
+#| fig-width: 4
+#| fig-height: 3
+
+ggplot(data, aes(x = tissu, y = StarchNscTissue)) +
+  geom_boxplot() +
+  labs(y = "Starch Content", x="Tissue Type") +
+  theme_minimal()
+
+```
+
+Another variable of that could have a major impact is the treatment.
+If some samples get more water than others it would make sense to see more growth.
+It is also possible that the time could impact the effect the water has on the starch content.
+Below is a bar chart that separates measurements first by day and night, and then by the treatment while still showing the differences in tissue type.
+Remember time points C and D are at night and the rest are during the day.
+
+```{r, fig.pos="H"}
+#| label: fig-toma-graph
+#| echo: false
+#| eval: true
+#| fig-cap: "Barchat of starch content vs. tissue types, separating by treatment and day or night."
+#| fig-width: 5
+#| fig-height: 3.5
+
+ggplot(data, aes(x = tissu, y = StarchNscTissue, fill = treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ dayPeriod) +
+  labs(
+    x = "Tissue Type",
+    y = "Starch Content"
+  ) +
+  theme_minimal()
+
+##Box_Plot
+ggplot(data, aes(x = tissu, y = StarchNscTissue, fill = treatment)) +
+  geom_boxplot() +
+  facet_wrap(~ dayPeriod) +
+  labs(
+    title = "Boxplot of Starch Content by Tissue Type and Treatment",
+    x = "Tissue Type",
+    y = "Starch Content"
+  ) +
+  theme_minimal()
+
+
+```
+
+In the first graph above we can see the starch content for measurements with the tissue types LM and UM are higher when given the control treatment instead of the drought treatment.
+This is not as clear with the other two tissue types.
+Additionally, the effect day and night have on the starch contents are not clear, as we saw in the summary statistics table above.
+
+In the second graph, we can observe **Tissue Type**: `LM` and `UM` tissues have higher starch content than `END` and `IT`.
+
+1.  **Treatment Effect**: The Control treatment generally results in higher starch content than the Drought treatment, especially in `LM` and `UM`.
+
+2.  **DayPeriod**: The effect of Day vs. Night is less pronounced but appears to show slightly higher starch content during the Day for Control in `LM` and `UM` tissues.
+
+In summary, **starch content is influenced by tissue type and treatment**, with `LM` and `UM` tissues under Control treatment during the Day showing the highest levels.
+This visualization effectively highlights the interactions between tissue type, treatment, and collection period.
+
+# Potential models
+
+The replication mentioned previously suggests a mixed model approach is needed.
+This is due to the replication being a random effect.
+The simplest case of this type of model is a linear mixed model.
+To use this, the residuals of the model must be approximately normally distributed.
+
+# How explanatory variables can be used
+
+Now we will explore few models to see which one fits better for this data set.
+
+## Model 1 : Mixed Effects Model
+
+The first model we want to consider is a linear mixed model with fixed effects treatment, tissue type, and the period of the day, along with random effects for the larger location (`campagne`), the sample specific location (`chamber`), and the sample itself.
+Additionally, this model includes interaction terms for the fixed effects.
+This can be expressed as
+
+$$
+y_{ijklm} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} + v_{m} + w_{n} + \epsilon_{ijklm}
+$$ where $y_{ijklm}$ represents the starch content, $\mu$ is the overall mean, $\tau_i$ is the fixed effect for the $i$th treatment, $\alpha_j$ is the fixed effect for the $j$th tissue type, and $\beta_k$ is the fixed effect for the period of the day.
+For the random effects $u_{l}$ is the effect for the `campagne` variable, $v_{m}$ is the effect for `chamber`, and $w_{n}$ is the effect for the sample.
+The residuals are represented by $\epsilon_{ijklm}$.
+The remaining terms represent the interaction between the fixed effects.
+For instance $(\tau \alpha)_{ij}$ is the interaction effect of the treatment and tissue type, while $(\tau \alpha \beta)_{ijk}$ represents the three-way interaction of all fixed effects in the model.
+
+The model was applied in SAS and all code can be found in *Appendix B - SAS Code*.
+The figure below shows three tables that are a part of the SAS output.
+The *Fit Statistics* tables suggests we have a reasonably fitting model.
+Note these values can also be used for comparison later.
+
+![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, and *Type 3 Tests of Fixed Effects* for the first proposed model.](Screenshot%20(166).png){width="3in"}
+
+The *Type 3 Tests of Fixed Effects* reports what fixed effects are registering as significant.
+With p-values less than 0.0001 both the tissue and the treatment by tissue interaction are highly significant.
+The treatment effect on its own is still significant at a significance level of 5%.
+The day period and its interaction with the tissue type are marginally significant, but neither are at the 5% level.
+The remaining interactions are not significant either.
+
+The *Least Squares Means* table below further investigates the fixed effects.
+We can see the estimate for each level of each variable in the `Estimate` column, as well as the p-value in the `Pr > |t|` column.
+As expected the estimated effect for the control treatment is greater than that of the drought treatment, and the LM and UM tissue types have larger estimates than the END and IT types.
+A somewhat surprising result is that the estimated coefficient for night is greater than that of day though not my much.
+
+![*Least Squares Means* table for the first proposed model.](LSmean-1.jpg)
+
+In terms of significance, the control treatment is highly significant while the drought treatment is only marginally so.
+Similarly, the LM and UM tissue types are highly significant while IT and END are not at all.
+Both periods of day seem to be significant though.
+
+The *Differences of Least Squares Means* table shows pairwise comparisons for the fixed effects in the model, with Tukey-Kramer adjustments for multiple comparisons.
+(@tukey).
+This allows us to see whether changing the level is significant holding all else constant .
+Using the adjusted p-values, found in the `Adj P` column, we can see there are significant differences at the 5% between the treatment levels as well as most tissue types, with many being significant at lower levels.
+The lone exception to this in regards to the tissue levels is the difference between LM and UM.
+Additionally, the difference between day and night is only marginally significant.
+
+![*Differences of Least Squares Means* table for the first proposed model.](LSmean-2.jpg)
+
+Since we are working with mixed models, certain assumptions need to hold for us to trust the output above.
+One is that the residuals are both normally distributed and random, or homoscedastic.
+(@Issa2011).
+These can be checked graphically.
+The SAS figure below shows three graphs as well as statistics discussed above.
+The histogram, top right, and Q-Q plot, bottom left, indicate the normality assumption holds.
+However, the top left graph presents an issue with the model.
+When residuals are random, this plot should be randomly scattered.
+In the figure below, there seems to be a fanning out pattern, which indicates homoscedasticity may be violated, meaning heteroskedasticity is present.
+
+![Residual plots and statistics for first proposed model.](Hist-1.jpg)
+
+While one could argue the homoscedasticity assumption is not definitely violated, the graphical evidence in enough for us to have questions regarding the model's viability.
+With that in mind, other models need to be considered.
+
+# Where I (Ryan) stopped on 11/1.
+
+## Nested Model
+
+CHAT GTP DOUBLE CHECK $$
+y_{ijklm} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} + v_{m(l)} + w_{l(m,n)} + \epsilon_{ijklm}
+$$
+
+**For your Reference-**
+
+-   Random effect of **chamber** nested within **campagne**.
+
+-   Random effect of **sample** nested within **chamber** and **campagne**.
+
+![Fig-1](nested_output.jpg){width="3in"}
+
+**Interpretation:**
+
+### 1. Covariance Parameter Estimates
+
+-   **campagne**: The estimated variance due to `campagne` is 0.5207, indicating that differences between locations (campagne) contribute to the overall variance in starch content.
+
+-   **chamber(campagne)**: The estimated variance due to `chamber` nested within `campagne` is 0.2477, suggesting that variation between chambers within each location also affects starch content.
+
+-   **sample(campagne\*chamber)**: The estimated variance due to `sample` nested within `campagne` and `chamber` is 0.000819, which is relatively small, implying limited variability due to individual samples within chambers.
+
+-   **Residual**: The residual variance is 0.9277, which represents the unexplained variability after accounting for fixed effects and random effects.
+
+### 2. Fit Statistics
+
+The value of the AIC, AICC, and BIC are comparatively higher than the mixed effect model.
+
+### 3. Type 3 Tests of Fixed Effects
+
+This table tests the significance of each fixed effect and their interactions.
+
+-   **Treatment** (`p = 0.0371`): Significant at the 0.05 level, indicating that the `treatment` effect (Control vs. Drought) has a statistically significant impact on starch content.
+
+-   **Tissu** (`p < 0.0001`): Highly significant, suggesting that different tissue types have a strong effect on starch content.
+
+-   **Treatment\*Tissu Interaction** (`p < 0.0001`): Significant, indicating that the effect of treatment on starch content varies by tissue type.
+
+-   **DayPeriod** (`p = 0.0877`): Not significant at the 0.05 level, implying that the collection time (Day vs. Night) does not have a significant impact on starch content.
+
+-   **Treatment\*DayPeriod Interaction** (`p = 0.6731`): Not significant, suggesting that there is no interaction between treatment and day period.
+
+-   **Tissu\*DayPeriod Interaction** (`p = 0.0950`): Marginally significant, indicating a potential interaction between tissue type and day period, but it is not below the 0.05 significance level.
+
+-   **Treatment*Tissu*DayPeriod Interaction** (`p = 0.7153`): Not significant, indicating that there is no three-way interaction among treatment, tissue type, and day period.
+
+### Summary of Findings
+
+1.  **Significant Effects**: Treatment and tissue type are significant main effects, with a significant interaction between them.
+    This suggests that starch content varies by treatment and tissue type, with the impact of treatment depending on the type of tissue.
+
+2.  **Non-Significant Effects**: DayPeriod does not have a significant effect, and there are no significant interactions involving DayPeriod with treatment or tissue type.
+
+3.  **Random Effects**: Variability due to `campagne` and `chamber` within `campagne` are notable, while the sample-level variability is minimal.
+
+In conclusion, **treatment** and **tissue type** are the primary factors affecting starch content, with the interaction indicating that the effect of treatment depends on tissue type.
+The time of collection (Day vs. Night) does not significantly affect starch content in this model.
+
+![Fig-2](nested.ls-1.jpg)
+
+**Interpretation:**
+
+### Summary
+
+1.  **Treatment**: Control condition has higher starch content than Drought, and both are significantly different from zero.
+
+2.  **Tissue**: LM and UM tissues have significantly higher starch content compared to END and IT, which do not show significant starch content.
+
+3.  **DayPeriod**: Both Day and Night periods show significant starch content, with a slightly higher mean during the Night.
+
+In summary, **treatment, tissue type, and collection time** all influence starch content, with the **Control treatment, LM and UM tissues, and Night period** showing higher values.
+
+![Fig-3](nested.ls-2.jpg)
+
+**Interpretation:**
+
+### Summary of Findings
+
+1.  **Treatment**: Control has a significantly higher starch content than Drought.
+
+2.  **Tissue**: LM and UM tissues have significantly higher starch content compared to END and IT tissues.
+    However, there is no significant difference between END vs. IT or between LM vs. UM.
+
+3.  **DayPeriod**: No significant difference in starch content between Day and Night.
+
+In summary, **treatment** and **tissue type** are the main drivers of differences in starch content, with **Control** and **LM/UM tissues** showing higher values.
+The **DayPeriod** does not significantly impact starch content
+
+![Fig-4](nested_res.png)
+
+##GLMM Model:
+
+CHAT GTP DOUBLE CHECK $$
+g(\mathbb{E}(y_{ijklm})) = \mu + \alpha_i + \tau_j + \beta_k + (\alpha \tau)_{ij} + (\alpha \beta)_{ik} + (\tau \beta)_{jk} + (\alpha \tau \beta)_{ijk} + u_{l} + v_{m} + w_{n} + \epsilon_{ijklm}
+$$
+
+### Summary
+
+-   **Normality**: Residuals are approximately normally distributed, as suggested by the histogram and Q-Q plot, though slight deviations are present in the tails.
+
+-   **Homoscedasticity**: There appears to be some heteroscedasticity, with residuals showing increasing variance for higher predicted values, as indicated in the residuals vs. predicted plot.
+
+-   **Model Fit**: The model appears reasonably well-fitted overall, though slight adjustments or transformations could be considered if the heteroscedasticity impacts model accuracy.
+
+In conclusion, the model generally meets the assumptions of normality and homoscedasticity, but there are minor deviations that may warrant further investigation, particularly with the slight increase in residual variance at higher predicted values.
+
+**Output**
+
+![Fig-1](glmm_output.png){width="3in"}
+
+**Interpretation:**
+
+Here's an interpretation of each section in the provided output:
+
+### Fit Statistics
+
+These statistics suggest that this model is a reasonable fit and can be compared with other models if needed to find the best balance of fit and simplicity.
+
+### Fit Statistics for Conditional Distribution
+
+-   **-2 log L(StarchNscTissue \| r. effects)**: 812.56 -- A measure of the fit of the conditional model, where lower values suggest better fit.
+
+-   **Pearson Chi-Square**: 108.96
+
+-   **Pearson Chi-Square / DF**: 0.27 -- Values near 1 indicate a good fit.
+    A value of 0.27 suggests possible overdispersion (less variation in residuals than expected under the model).
+
+### Covariance Parameter Estimates
+
+-   **campagne**: Variance component of 0.008996, suggesting low variability attributed to differences between locations (campagne).
+
+-   **sample**: Variance component of 0.1116, indicating moderate variability between samples.
+
+-   **chamber**: Variance component of 0.02969, indicating minor variability between chambers.
+
+-   **Residual**: Variance component of 0.2664, representing the unexplained variability after accounting for the fixed effects and random effects.
+
+The random effects `sample` and `chamber` show some variability, with `sample` contributing the most, whereas `campagne` has minimal variance.
+The residual variance is relatively small.
+
+### Summary of Findings
+
+1.  **Significant Effects**: Tissue type (`tissu`) has a strong effect on starch content, with a significant interaction between tissue type and treatment, meaning that the effect of treatment varies depending on the tissue type.
+
+2.  **Non-Significant Effects**: Treatment alone, day period, and most interactions involving day period do not significantly affect starch content.
+
+3.  **Random Effects**: The sample-level variance is notable, while location (`campagne`) and chamber-level variances are relatively small.
+    The residual variance is moderate.
+
+In summary, **tissue type is the primary factor** influencing starch content, with a significant interaction indicating that **treatment effects depend on the tissue type**.
+Day period and interactions involving day period are not significant in this model.
+
+![Fig-2](glmm.ls.png) **Interpretation:**
+
+### Summary of Findings
+
+1.  **Treatment**: There is no significant difference between Control and Drought treatments on starch content, although the Control group alone shows a significant mean effect.
+
+2.  **DayPeriod**: Both Day and Night periods individually have significant effects, but there is no significant difference between them.
+
+3.  **Tissue (Tissu)**: LM and UM tissues have significantly higher starch content compared to END and IT.
+    However, there is no significant difference between END vs. IT or between LM vs. UM.
+
+In summary, **tissue type** is the primary factor influencing starch content, with **LM and UM showing higher values**.
+The **DayPeriod** and **Treatment** effects are individually significant, but the comparisons between levels do not show substantial differences.
+
+![Fig-3](glmm_res.png)
+
+###Interpretation:
+
+The **Conditional Residuals** plot provides diagnostic checks to evaluate the model's assumptions.
+
+## 1. Residuals vs. Linear Predictor (Top Left)
+
+This plot displays residuals against the linear predictor (fitted values).
+Ideally, residuals should be randomly scattered around zero with no discernible patterns.
+
+-   In this case, the residuals appear fairly well-scattered, but there is some minor clustering around zero, suggesting that the residuals are mostly unbiased but may have slight deviations. No obvious pattern indicates that the assumption of homoscedasticity (constant variance) is mostly met.
+
+## 2. Histogram of Residuals (Top Right)
+
+This histogram shows the distribution of residuals with an overlaid normal curve.
+
+-   The residuals appear approximately normally distributed, though there is some slight skewness, particularly on the right tail. This indicates that the normality assumption is reasonably met, but there may be a few outliers affecting the distribution.
+
+## 3. Q-Q Plot of Residuals (Bottom Left)
+
+The Q-Q plot compares the residuals to a theoretical normal distribution.
+Points should ideally lie along the straight line if the residuals are normally distributed.
+
+-   Most points fall along the line, indicating approximate normality, although there are deviations at the upper tail. This suggests that while most residuals are normally distributed, a few larger values deviate from normality, indicating possible outliers.
+
+## 4. Boxplot of Residuals (Bottom Right)
+
+The boxplot provides a summary of the residuals, showing the median, quartiles, and potential outliers.
+
+-   A few outliers are labeled and extend beyond the upper whisker. While the bulk of the residuals fall within a reasonable range, these outliers indicate that some data points do not fit the model as well as others.
+
+## Summary
+
+-   **Normality**: The residuals are approximately normally distributed, as indicated by the histogram and Q-Q plot, though there are minor deviations in the upper tail.
+
+-   **Homoscedasticity**: The residuals vs. linear predictor plot does not show any strong patterns, suggesting that the assumption of constant variance is reasonably met.
+
+-   **Outliers**: The boxplot and Q-Q plot show a few outliers, which may slightly affect the model fit but do not indicate severe violations of assumptions.
+
+Overall, the model diagnostics suggest that the assumptions of normality and homoscedasticity are mostly met, with minor deviations due to a few outliers.
+The model appears to fit the data reasonably well, although addressing or investigating the outliers could further improve model performance.
+
+##Best Model to fit Based on the above discussion,
+
+we would like to fit the **Mixed Model** for this data set.
+As we can see from the fit statistics and diagnostic result, the mixed model gives us better fitting than the Nested and GLMM models.
+In the Hierarchical Nested Model, the AIC, BIC, and AICC are comparatively a little bit higher than the Mixed Model, and residual plots remain the same for both plots.
+Although the AIC, BICC, and AICC are lower in GLMM than in the Mixed Model, the assumptions hold better in the Mixed Model.
+So, it would be better to fit a **Mixed Model** to ignore unnecessary complexity in the model structure.
+
+#Summary
+
+The study analyzed the effects of tissue type, treatment, and time of day on starch content in pine tissues across two locations, with minor data adjustments made for consistency.
+Exploratory analysis showed that LM and UM tissues had higher starch content
+
+and control samples generally had higher values than drought samples, particularly in LM and UM.
+Three models were evaluated: Mixed Effects Model with Interactions, Hierarchical Nested Model, and GLMM.
+The Mixed Effects Model showed significant effects for tissue and treatment-tissue interaction, with residuals meeting normality assumptions better than the GLMM.
+Due to its balance of fit, interpretability, and simplicity, the Mixed Effects Model was recommended as the best approach.
+
+**Recommendation**: \
+Since, the **significant Tissue\*Treatment interaction** highlights the need for tissue-specific analysis in drought studies, as different tissue types respond uniquely to environmental stress.
+Future research should focus on high-starch tissues (LM and UM), conducting separate analyses under various water conditions to better understand drought\'s impact on starch allocation and plant energy reserves.
+**In summary**, LM and UM tissues, with high starch levels under control conditions and significant reductions under drought, should be prioritized in drought management and resilience research.
+
+# Conclusion
+
+GitHub page found [here](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
+\[This should go first\]
+
+\newpage
+
+# References
+
+::: {#refs}
+:::
+
+\newpage
+
+# Appendix A - R Code
+
+```{r, , fig.pos="H"}
+#| label: appendix A
+#| echo: true
+#| eval: false
+
+## Prints code without running it
+
+library(knitr)
+data <- read.csv("data.csv")
+knitr::kable(head(data), format = 'markdown')
+
+
+
+
+
+
+```
+
+\newpage
+
+# Appendix B - SAS Code
+
+``` sas
+
+/* Reading in csv file */
+FILENAME REFFILE '<enter your file path';
+
+PROC IMPORT DATAFILE=REFFILE
+    DBMS=CSV
+    OUT=data;
+    GETNAMES=YES;
+RUN;
+
+
+/* Mixed Model*/
+proc mixed data=data method=reml plots=(residualpanel);
+    class treatment tissu dayPeriod campagne chamber;
+    model StarchNscTissue = treatment|tissu|dayPeriod;
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
+    random campagne chamber sample;
+run;
+
+
+/* Hierarchial Nested Model*/
+proc mixed data=data method=reml plots=(residualpanel);
+    class treatment tissu dayPeriod campagne chamber sample;
+    model StarchNscTissue = treatment | tissu | dayPeriod;
+    random campagne chamber(campagne) sample(chamber*campagne);
+    lsmeans treatment tissu dayPeriod / pdiff=all cl adjust=tukey;
+run;
+
+/* GLMM Model */
+proc glimmix data=data method=laplace plots=(residualpanel);
+    class tissu treatment dayPeriod campagne sample chamber;
+    model StarchNscTissue = tissu|treatment|dayPeriod / dist=gamma;
+    random campagne sample chamber;
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
+run;
+```
