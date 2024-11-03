@@ -291,7 +291,7 @@ Additionally, this model includes interaction terms for the fixed effects.
 This can be expressed as
 
 $$
-y_{ijklm} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} + v_{m} + w_{n} + \epsilon_{ijklm}
+y_{ijklmn} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} + v_{m} + w_{n} + \epsilon_{ijklmn}
 $$ 
 
 where $y_{ijklm}$ represents the starch content, $\mu$ is the overall mean, $\tau_i$ is the fixed effect for the $i$th treatment, $\alpha_j$ is the fixed effect for the $j$th tissue type, and $\beta_k$ is the fixed effect for the period of the day.
@@ -356,7 +356,7 @@ With that in mind, other models need to be considered.
 The next model we want to consider is another linear mixed model. Many of the terms in the model below are the same as before in terms of notation.  The additions to this model are the nested structure of `chamber`, `sample`, and `campagne`.  Since each `chamber` represents the location of a certain `sample` and each `sample` is contained within a particular `campagne` we can say `chamber` is nested within `sample` which is nested within `campagne`.  In the model below, $u_{l}$ is once again the random effect for `campagne`, but $v_{m(l)}$ is the random effect of `sample` nested within `campagne` while $w_{n(l, m)}$ is the random effect of `chamber` nested within each `sample` within each `campagne`.
 
 $$
-y_{ijklm} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} +  v_{m(l)} + w_{n(l, m)} + \epsilon_{ijklm}
+y_{ijklmn} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} +  v_{m(l)} + w_{n(l, m)} + \epsilon_{ijklmn}
 $$ 
 
 Now let's consider the same SAS tables and figures we saw in the first proposed model, this time for our nested model.  In the *Covariance Parameter Estimates* table below we can see very different results than previously.  Here the estimated variance due to `campagne` has risen to 0.5207.  Additionally the variance of `sample` nested within `campagne` has an estimated variance of 0.2477, which means both of these affect the starch content.  The other nested structure seems to have little effect though.
@@ -403,7 +403,7 @@ b <- starchmean/st_var
 
 For our third model we want to consider a generalized linear mixed model, or GLMM, instead of the linear mixed models we've just looked at.  This approach can be used on any response variable that follows a distribution belonging to an exponential family.  For this approach, link functions are used to work with these different types of distributions.  (@PennState).
 
-To use this approach we should determine a distribution that fits the starch content. In @fig-normallity, we found the distribution has a  skew.  One distribution that could fit this shape is a gamma distribution.  According to @CasellaBerger and @alphabeta, the gamma distribution requires some positive parameters $\alpha$, $\beta$ such that $E(X)=\alpha/\beta$ and $Var(X)=\alpha/\beta^2$ where $E(X)$ and $Var(X)$ represent the mean and variance of some variable $X$ respectively.  In our case $X$ is the starch content. Using the formulas above it can be shown that if our response variable follows a gamma distribution, it would be with an $\alpha$ of roughly 1.2333 and a $$\beta$$ of 0.6407.  (@CasellaBerger; @alphabeta).  @fig-gamma-graph shows a gamma distribution with these parameters on top of the histogram of starch content seen previously.  We can see the data fits this distribution fairly well so we will proceed.
+To use this approach we should determine a distribution that fits the starch content. In @fig-normallity, we found the distribution has a  skew.  One distribution that could fit this shape is a gamma distribution.  According to @CasellaBerger and @alphabeta, the gamma distribution requires some positive parameters $\alpha$, $\beta$ such that $E(X)=\alpha/\beta$ and $Var(X)=\alpha/\beta^2$ where $E(X)$ and $Var(X)$ represent the mean and variance of some variable $X$ respectively.  In our case $X$ is the starch content. Using the formulas above it can be shown that if our response variable follows a gamma distribution, it would be with an $\alpha$ of roughly 1.2333 and a $\beta$ of 0.6407.  (@CasellaBerger; @alphabeta).  @fig-gamma-graph shows a gamma distribution with these parameters on top of the histogram of starch content seen previously.  We can see the data fits this distribution fairly well so we will proceed.
 
 ```{r, fig.pos="H"}
 #| label: fig-gamma-graph
@@ -426,29 +426,22 @@ ggplot(data, aes(x = StarchNscTissue)) +
 
 ```
 
-Since we are using a gamma distribution in this GLMM, we need to use the appropriate link function.
+Since we are using a gamma distribution in this GLMM, we need to use the appropriate link function.  According to @glink, the link function that is often used with a gamma GLMMs is the inverse function.  
 
-
-
-
-CHAT GTP DOUBLE CHECK 
+This means that
 $$
-g(\mathbb{E}(y_{ijklm})) = \mu + \alpha_i + \tau_j + \beta_k + (\alpha \tau)_{ij} + (\alpha \beta)_{ik} + (\tau \beta)_{jk} + (\alpha \tau \beta)_{ijk} + u_{l} + v_{m} + w_{n} + \epsilon_{ijklm}
+\mathbb{E}(y_{ijklmn})^{-1}=\eta_{ijklmn}
 $$
+where ${E}(y_{ijklmn})$ is the mean of the starch content and $\eta_{ijklmn}$ represents the inverse of that mean.  Using this new variable $\eta_{ijk}$ we can set up our model as 
 
-### Summary
+$$
+\eta_{ijklmn} = \mu + \alpha_i + \tau_j + \beta_k + (\alpha \tau)_{ij} + (\alpha \beta)_{ik} + (\tau \beta)_{jk} + (\alpha \tau \beta)_{ijk} + u_l + v_m + w_n
+$$
+In this model all terms match what was included in the first model since all nested effects were removed.  As we move forward with analyzing SAS output from this model, it is important to keep in mind the formula above is modeling $\eta_{ijklmn}$, not ${E}(y_{ijklmn})$.
 
--   **Normality**: Residuals are approximately normally distributed, as suggested by the histogram and Q-Q plot, though slight deviations are present in the tails.
+Let's consider a part of the SAS output that is shown below.
 
--   **Homoscedasticity**: There appears to be some heteroscedasticity, with residuals showing increasing variance for higher predicted values, as indicated in the residuals vs. predicted plot.
-
--   **Model Fit**: The model appears reasonably well-fitted overall, though slight adjustments or transformations could be considered if the heteroscedasticity impacts model accuracy.
-
-In conclusion, the model generally meets the assumptions of normality and homoscedasticity, but there are minor deviations that may warrant further investigation, particularly with the slight increase in residual variance at higher predicted values.
-
-**Output**
-
-![Fig-1](glmm_output.png){width="3in"}
+![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, *Fit Statistics for Conditional Distribution*, and *Type 3 Tests of Fixed Effects* for GLMM.](glmm_output.png){width="3in"}
 
 **Interpretation:**
 
@@ -492,7 +485,7 @@ The residual variance is relatively small.
 In summary, **tissue type is the primary factor** influencing starch content, with a significant interaction indicating that **treatment effects depend on the tissue type**.
 Day period and interactions involving day period are not significant in this model.
 
-![Fig-2](glmm.ls.png) **Interpretation:**
+![*Least Squares Means* and *Differences of treatment Least Squares Means* table for each fixed effect.](glmm.ls.png) **Interpretation:**
 
 ### Summary of Findings
 
@@ -506,7 +499,7 @@ Day period and interactions involving day period are not significant in this mod
 In summary, **tissue type** is the primary factor influencing starch content, with **LM and UM showing higher values**.
 The **DayPeriod** and **Treatment** effects are individually significant, but the comparisons between levels do not show substantial differences.
 
-![Fig-3](glmm_res.png){width="4in"}
+![Residual plots and statistics for GLMM.](glmm_res.png){width="4in"}
 
 ###Interpretation:
 
