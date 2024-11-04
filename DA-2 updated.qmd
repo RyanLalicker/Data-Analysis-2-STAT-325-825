@@ -54,7 +54,7 @@ The experiment was replicated at two locations as well and not all measurements 
 
 We intend to analysis the results of this data below.
 We will review the variables, fit multiple models, and make a suggestion to the client.
-The data set, `data.csv`, and all other files used in this project can be found on our [Github page](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825) which can be found at https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825.
+The data set, `data.csv`, and all other files used in this project can be found on our [Github page](https://www.youtube.com/watch?v=dQw4w9WgXcQ): [https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
 
 # Exploring the Data
 
