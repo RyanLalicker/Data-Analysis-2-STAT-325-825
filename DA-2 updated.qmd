@@ -54,7 +54,7 @@ The experiment was replicated at two locations as well and not all measurements 
 
 We intend to analysis the results of this data below.
 We will review the variables, fit multiple models, and make a suggestion to the client.
-The data set, `data.csv`, and all other files used in this project can be found on our [Github page](https://www.youtube.com/watch?v=dQw4w9WgXcQ): [https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825](https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825).
+The data set, `data.csv`, and all other files used in this project can be found on our [Github page](https://www.youtube.com/watch?v=dQw4w9WgXcQ): <https://github.com/RyanLalicker/Data-Analysis-2-STAT-325-825>.
 
 # Exploring the Data
 
@@ -351,7 +351,11 @@ With that in mind, other models need to be considered.
 
 ## Nested Model
 
-The next model we want to consider is another linear mixed model. Many of the terms in the model below are the same as before in terms of notation.  The additions to this model are the nested structure of the time points within the period of the day.  In the model below many of the effects have the same notation as before, but $\beta_{k(l)}$ represents the effect of the $l$th time nested within the $k$th period of the day.  These changes occur in the interaction terms as well producing the model
+The next model we want to consider is another linear mixed model.
+Many of the terms in the model below are the same as before in terms of notation.
+The additions to this model are the nested structure of the time points within the period of the day.
+In the model below many of the effects have the same notation as before, but $\beta_{k(l)}$ represents the effect of the $l$th time nested within the $k$th period of the day.
+These changes occur in the interaction terms as well producing the model
 
 $$
 y_{ijklmno} = \mu + \tau_i + \alpha_j + \beta_{k(l)} + (\tau \alpha)_{ij} + (\tau \beta)_{i,k(l)} + (\alpha \beta)_{j,k(l)} + (\tau \alpha)_{i,jk(l)} + u_m + v_n + w_o + \epsilon_{ijklmno}
@@ -360,7 +364,7 @@ $$
 Now let's consider the same SAS tables and figures we saw in the first proposed model, this time for our nested model.
 In the *Covariance Parameter Estimates* table below we can see very different results than previously.
 Here the estimated variance due to `campagne` has risen to 0.5561.
-Additionally `sample` has an estimated variance of 0.2463, which means both of these affect the starch content.
+Additionally, the `sample` has an estimated variance of 0.2463, which means both of these affect the starch content.
 The `chamber` seems to have little effect though.
 
 ![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, and *Type 3 Tests of Fixed Effects* for the proposed nested model.](nes_out.png){width="3in"}
@@ -368,11 +372,17 @@ The `chamber` seems to have little effect though.
 The *Fit Statistics* shows values slightly smaller than what we saw with the previous model.
 This could mean the nested approach is a slightly better fit than before.
 The *Type 3 Tests of Fixed Effects* table shows which fixed effects and interactions are significant.
-Here we can see the treatment is marginally significant, but both tissue type and time nested within day are significant at the 1% level.  Additionally all two way interactions are significant, though the three-way interaction is not.  It would seem that time nested within day is now a primary factory in determining starch content.
+Here we can see the treatment is marginally significant, but both tissue type and time nested within day are significant at the 1% level.
+Additionally, all two way interactions are significant, though the three-way interaction is not.
+It would seem that time nested within day is now a primary factory in determining starch content.
 
 ![*Least Squares Mean* table for the nested model.](nes_ls-1.png)
 
-Now let's consider the *Least Squares Means* table.  Not one level is considered significant on its own.  There are some significant differences though, as seen in the *Differences of Least Squares Means* table below.  We can see many of the tissue types have a significant difference as well as a handful of the time points such as A and D or E and F.  To get a better view of this and other tables, you may want to consider using the code in *Appendix B - SAS Code* to replicate the results.
+Now let's consider the *Least Squares Means* table.
+Not one level is considered significant on its own.
+There are some significant differences though, as seen in the *Differences of Least Squares Means* table below.
+We can see many of the tissue types have a significant difference as well as a handful of the time points such as A and D or E and F.
+To get a better view of this and other tables, you may want to consider using the code in *Appendix B - SAS Code* to replicate the results.
 
 ![*Differences of Least Squares Means* table for the nested model.](nes_ls-2.png)
 
@@ -382,8 +392,8 @@ It is worth noting though that the normality assumption seems to hold still.
 
 ![Residual plots and statistics for the nested model.](nes_res.png){width="4in"}
 
-While the potential assumption violation still persists, this nested model does seem to be an improvement upon the original.  For that reason we chose to keep the nested structure going forward.
-
+While the potential assumption violation still persists, this nested model does seem to be an improvement upon the original.
+For that reason we chose to keep the nested structure going forward.
 
 ## GLMM Model with Nested Structure
 
@@ -451,13 +461,14 @@ Using this new variable $\eta_{ijklmno}$ we can set up our model as
 
 $$
 \eta_{ijklmno} = \mu + \tau_i + \alpha_j + \beta_{k(l)} + (\tau \alpha)_{ij} + (\tau \beta)_{i,k(l)} + (\alpha \beta)_{j,k(l)} + (\tau \alpha)_{i,jk(l)} + u_m + v_n + w_o
-$$ 
-
+$$
 
 In this model all terms and types (fixed and random) match what was included in the first model since all nested effects were removed.
 As we move forward with analyzing SAS output from this model, it is important to keep in mind the formula above is modeling $\eta_{ijklmno}$, not ${E}(y_{ijklmno})$.
 
-Let's consider a part of the SAS output that is shown below.  The *Fit Statistics* table shows a lower AIC compared to our other models, but we need to be careful not to dig too deep into this since this model is actually looking at the inverse of starch contents.  One potential concern is in the *Fit Statistics for Conditional Distribution* table.
+Let's consider a part of the SAS output that is shown below.
+The *Fit Statistics* table shows a lower AIC compared to our other models, but we need to be careful not to dig too deep into this since this model is actually looking at the inverse of starch contents.
+One potential concern is in the *Fit Statistics for Conditional Distribution* table.
 The value of 0.20 for `Pearson Chi-Square / DF` is not outstanding since values close to 1 indicate a good fit.
 This implies there could be some overdispersion, which could contribute to the relatively low variance estimate for the residuals in the *Covariance Parameter Estimates* table.
 In terms of significance, only the treatment and the three-way interaction are not significant at the 5% level.
@@ -470,20 +481,34 @@ Both day and night are significant levels of the day period, but again their dif
 All four tissue types and most of the differences are considered significant.
 The exceptions to this are the differences between END and IT types and LM and UM types.
 
-Within the SAS output their are a series of tables looking at the least squares means and their differences for all levels of each fixed effect.  These tables can be found in *Appendix C - Additional SAS Output*.  The results are in-line with what we have seen previously and do not raise any concerns with this model.  Once again please keep in mind the estimates shown in the tables correspond to an inverse model.  This means that time A nested within day having an estimated effect of 0.1857 does not mean at time A the predicted starch content increases by 0.1857.
+Within the SAS output their are a series of tables looking at the least squares means and their differences for all levels of each fixed effect.
+These tables can be found in *Appendix C - Additional SAS Output*.
+The results are in-line with what we have seen previously and do not raise any concerns with this model.
+Once again please keep in mind the estimates shown in the tables correspond to an inverse model.
+This means that time A nested within day having an estimated effect of 0.1857 does not mean at time A the predicted starch content increases by 0.1857.
 
-Now let's see the residual plots.  Again, the Q-Q plot looks relatively normal and the histogram is decent other than it is not centered around zero, but this is not an issue since the normality assumption is not required for a GLMM.
+Now let's see the residual plots.
+Again, the Q-Q plot looks relatively normal and the histogram is decent other than it is not centered around zero, but this is not an issue since the normality assumption is not required for a GLMM.
 The residual versus linear predictor plot looks significantly better though as there does not seem to be any trend in the graph.
 
 ![Residual plots and statistics for GLMM.](glm_res.png){width="4in"}
 
-
 # Conclusion
 
-After considering several models we have presented the three above to walk through our process of selecting a model.  We began with a straightforward linear mixed model.  We then adjusted some of the variables and got the linear mixed model that nested time within the day period.  Finally we used a GLMM to better fit the highly skewed response variable.  
+After considering several models, we have presented the three above to walk through our process of selecting a model.
+We began with a straightforward linear mixed model.
+We then adjusted some variables and got the linear mixed model that nested time within the day period.
+Finally, we used a GLMM to fit the highly skewed response variable better.
 
-In the end, we believe the generalized linear mixed model with time nested within the day period is the best model.  It satisfies the assumptions needed for a GLMM and performs at a level we are comfortable with.  While this model does come with some risks in terms of complexity, we believe it is worth it in this case.
+In the end, we believe the generalised linear mixed model with time nested within the day period is the best model.
+It satisfies the assumptions needed for a GLMM and performs at a level we are comfortable with.
+While this model does come with some risks in terms of complexity, we believe it is worth it in this case.
 
+# Recommendation
+
+Since the **significant Tissue\*Treatment interaction** highlights the need for tissue-specific analysis in drought studies, as different tissue types respond uniquely to environmental stress.
+The client should focus on high-starch tissues (LM and UM), conducting separate analyses under various water conditions to better understand drought's impact on starch allocation and plant energy reserves.
+**In summary**, LM and UM tissues, with high starch levels under control conditions and significant reductions under drought, should be prioritized in drought management and resilience research.
 
 \newpage
 
@@ -666,9 +691,9 @@ RUN;
 /* Mixed Model*/
 proc mixed data=data method=reml plots=(residualpanel);
     class treatment tissu dayPeriod campagne chamber time;
-    model StarchNscTissue = treatment | tissu | dayPeriod(time);
-    random campagne chamber(campagne) sample;
-    lsmeans treatment dayPeriod(time) tissu / pdiff=all cl adjust=tukey;
+    model StarchNscTissue = treatment | tissu | dayPeriod;
+    random campagne chamber sample;
+    lsmeans treatment dayPeriod tissu / pdiff=all cl adjust=tukey;
 run;
 
 /* Hierarchial Nested Model*/
@@ -696,9 +721,8 @@ run;
 
 Full *Least Squares Means* and *Differences of treatment Least Squares Means* tables for each fixed effect in GLMM.
 
-
 ![](glm_ls-1.png)
 
-![](glm_ls-2.png) 
+![](glm_ls-2.png)
 
 ![](glm_ls-3.png)
