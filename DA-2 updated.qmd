@@ -452,7 +452,7 @@ ggplot(data, aes(x = StarchNscTissue)) +
 ```
 
 Since we are using a gamma distribution in this GLMM, we need to use the appropriate link function.
-According to @glink, the link function that is often used with a gamma GLMMs is the inverse function.
+According to @glink, the canonical link function that is often used with a gamma GLMMs is the inverse function.
 
 This means that $$
 \mathbb{E}(y_{ijklmno})^{-1}=\eta_{ijklmno}
@@ -500,15 +500,15 @@ We began with a straightforward linear mixed model.
 We then adjusted some variables and got the linear mixed model that nested time within the day period.
 Finally, we used a GLMM to fit the highly skewed response variable better.
 
-In the end, we believe the generalised linear mixed model with time nested within the day period is the best model.
+In the end, we believe the generalized linear mixed model with time nested within the day period is the best model.
 It satisfies the assumptions needed for a GLMM and performs at a level we are comfortable with.
 While this model does come with some risks in terms of complexity, we believe it is worth it in this case.
 
 # Recommendation
 
-Since the **significant Tissue\*Treatment interaction** highlights the need for tissue-specific analysis in drought studies, as different tissue types respond uniquely to environmental stress.
+The significant tissue type by treatment interaction highlights the need for tissue-specific analysis in drought studies, as different tissue types respond uniquely to environmental stress.
 The client should focus on high-starch tissues (LM and UM), conducting separate analyses under various water conditions to better understand drought's impact on starch allocation and plant energy reserves.
-**In summary**, LM and UM tissues, with high starch levels under control conditions and significant reductions under drought, should be prioritized in drought management and resilience research.
+In summary, LM and UM tissues, with high starch levels under control conditions and significant reductions under drought, should be prioritized in drought management and resilience research.
 
 \newpage
 
