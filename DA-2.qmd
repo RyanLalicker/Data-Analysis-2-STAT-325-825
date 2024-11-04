@@ -272,15 +272,16 @@ In @fig-toma-graph above we can see the starch content for measurements with the
 This is not as clear with the other two tissue types.
 Additionally, the effect day and night have on the starch contents are not clear, as we saw in the summary statistics table above.
 
-In @fig-toma-graph2 we can observe the groups with the control treatment tend to have more variance than those with the drought treatment.  Additionally there are a handful of outliers across the different tissue types.  Once again, though, there does not seem to be a clear difference between day and night across all levels.
-
+In @fig-toma-graph2 we can observe the groups with the control treatment tend to have more variance than those with the drought treatment.
+Additionally there are a handful of outliers across the different tissue types.
+Once again, though, there does not seem to be a clear difference between day and night across all levels.
 
 # Potential models
 
 The replication mentioned previously suggests a mixed model approach is needed.
 This is due to the replication being a random effect.
-The simplest case of this type of model is a linear mixed model, but there generalized linear mixed models are also a possibility. Now we will explore few models to see which one fits better for this data set.
-
+The simplest case of this type of model is a linear mixed model, but there generalized linear mixed models are also a possibility.
+Now we will explore few models to see which one fits better for this data set.
 
 ## Model 1 : Mixed Effects Model
 
@@ -290,7 +291,7 @@ This can be expressed as
 
 $$
 y_{ijklmn} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} + v_{m} + w_{n} + \epsilon_{ijklmn}
-$$ 
+$$
 
 where $y_{ijklm}$ represents the starch content, $\mu$ is the overall mean, $\tau_i$ is the fixed effect for the $i$th treatment, $\alpha_j$ is the fixed effect for the $j$th tissue type, and $\beta_k$ is the fixed effect for the period of the day.
 For the random effects $u_{l}$ is the effect for the `campagne` variable, $v_{m}$ is the effect for `chamber`, and $w_{n}$ is the effect for the sample.
@@ -303,9 +304,11 @@ The figure below shows three tables that are a part of the SAS output.
 The *Fit Statistics* tables suggests we have a reasonably fitting model.
 Note these values can also be used for comparison later.
 
-![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, and *Type 3 Tests of Fixed Effects* for the first proposed model.](Screenshot%20(166).png){width="3in"}
+![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, and *Type 3 Tests of Fixed Effects* for the first proposed model.](mix_out.png){width="3in"}
 
-The first table in the figure above, the *Covariance Parameter Estimates*, show how much of the variance each random variable and the residuals are responsible for.  We can see `campagne` and `sample` have almost no effect on the variance.  The `chamber` does have a small effect on the total variance, indicating it plays a part in the starch content.
+The first table in the figure above, the *Covariance Parameter Estimates*, show how much of the variance each random variable and the residuals are responsible for.
+We can see `campagne` and `sample` have almost no effect on the variance.
+The `chamber` does have a small effect on the total variance, indicating it plays a part in the starch content.
 
 The *Type 3 Tests of Fixed Effects* reports what fixed effects are registering as significant.
 With p-values less than 0.0001 both the tissue and the treatment by tissue interaction are highly significant.
@@ -318,7 +321,7 @@ We can see the estimate for each level of each variable in the `Estimate` column
 As expected the estimated effect for the control treatment is greater than that of the drought treatment, and the LM and UM tissue types have larger estimates than the END and IT types.
 A somewhat surprising result is that the estimated coefficient for night is greater than that of day though not my much.
 
-![*Least Squares Means* table for the first proposed model.](LSmean-1.jpg)
+![*Least Squares Means* table for the first proposed model.](mix_ls-1.png)
 
 In terms of significance, the control treatment is highly significant while the drought treatment is only marginally so.
 Similarly, the LM and UM tissue types are highly significant while IT and END are not at all.
@@ -331,7 +334,7 @@ Using the adjusted p-values, found in the `Adj P` column, we can see there are s
 The lone exception to this in regards to the tissue levels is the difference between LM and UM.
 Additionally, the difference between day and night is only marginally significant.
 
-![*Differences of Least Squares Means* table for the first proposed model.](LSmean-2.jpg)
+![*Differences of Least Squares Means* table for the first proposed model.](mix_ls-2.png)
 
 Since we are working with mixed models, certain assumptions need to hold for us to trust the output above.
 One is that the residuals are both normally distributed and random, or homoscedastic.
@@ -343,41 +346,60 @@ However, the top left graph presents an issue with the model.
 When residuals are random, this plot should be randomly scattered.
 In the figure below, there seems to be a fanning out pattern, which indicates homoscedasticity may be violated, meaning heteroskedasticity is present.
 
-![Residual plots and statistics for first proposed model.](Hist-1.jpg){width="4in"}
+![Residual plots and statistics for first proposed model.](mix_res.png){width="4in"}
 
 While one could argue the homoscedasticity assumption is not definitely violated, the graphical evidence in enough for us to have questions regarding the model's viability.
 With that in mind, other models need to be considered.
 
-
 ## Nested Model
 
-The next model we want to consider is another linear mixed model. Many of the terms in the model below are the same as before in terms of notation.  The additions to this model are the nested structure of `chamber`, `sample`, and `campagne`.  Since each `chamber` represents the location of a certain `sample` and each `sample` is contained within a particular `campagne` we can say `chamber` is nested within `sample` which is nested within `campagne`.  In the model below, $u_{l}$ is once again the random effect for `campagne`, but $v_{m(l)}$ is the random effect of `sample` nested within `campagne` while $w_{n(l, m)}$ is the random effect of `chamber` nested within each `sample` within each `campagne`.
+The next model we want to consider is another linear mixed model.
+Many of the terms in the model below are the same as before in terms of notation.
+The additions to this model are the nested structure of `chamber`, `sample`, and `campagne`.
+Since each `chamber` represents the location of a certain `sample` and each `sample` is contained within a particular `campagne` we can say `chamber` is nested within `sample` which is nested within `campagne`.
+In the model below, $u_{l}$ is once again the random effect for `campagne`, but $v_{m(l)}$ is the random effect of `sample` nested within `campagne` while $w_{n(l, m)}$ is the random effect of `chamber` nested within each `sample` within each `campagne`.
 
 $$
 y_{ijklmn} = \mu + \tau_i + \alpha_j + \beta_k + (\tau \alpha)_{ij} + (\tau \beta)_{ik} + (\alpha \beta)_{jk} + (\tau \alpha \beta)_{ijk} + u_{l} +  v_{m(l)} + w_{n(l, m)} + \epsilon_{ijklmn}
-$$ 
+$$
 
-Now let's consider the same SAS tables and figures we saw in the first proposed model, this time for our nested model.  In the *Covariance Parameter Estimates* table below we can see very different results than previously.  Here the estimated variance due to `campagne` has risen to 0.5207.  Additionally the variance of `sample` nested within `campagne` has an estimated variance of 0.2477, which means both of these affect the starch content.  The other nested structure seems to have little effect though.
+Now let's consider the same SAS tables and figures we saw in the first proposed model, this time for our nested model.
+In the *Covariance Parameter Estimates* table below we can see very different results than previously.
+Here the estimated variance due to `campagne` has risen to 0.5207.
+Additionally the variance of `sample` nested within `campagne` has an estimated variance of 0.2477, which means both of these affect the starch content.
+The other nested structure seems to have little effect though.
 
-![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, and *Type 3 Tests of Fixed Effects* for the proposed nested model.](nested_output.jpg){width="3in"}
+![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, and *Type 3 Tests of Fixed Effects* for the proposed nested model.](nes_out.png){width="3in"}
 
-The *Fit Statistics* shows values slightly larger than what we saw with the previous model.  This could mean the nested approach is a slightly worse fit than before.  The *Type 3 Tests of Fixed Effects* table shows which fixed effects and interactions are significant.  The results are similar to before with all effects showing similar p-values.  Only the treatment effect saw a slight increase in the p-value, but it is still significant at the 5% level.  In the end, all fixed and interaction effects are significant at the same level as before.  Once again it seems the treatment and tissue type are the primary factors in determining starch content.
+The *Fit Statistics* shows values slightly larger than what we saw with the previous model.
+This could mean the nested approach is a slightly worse fit than before.
+The *Type 3 Tests of Fixed Effects* table shows which fixed effects and interactions are significant.
+The results are similar to before with all effects showing similar p-values.
+Only the treatment effect saw a slight increase in the p-value, but it is still significant at the 5% level.
+In the end, all fixed and interaction effects are significant at the same level as before.
+Once again it seems the treatment and tissue type are the primary factors in determining starch content.
 
-Now let's consider the *Least Squares Means* table below.  While some of the estimates have changed, with none being negative this time, we can see the only terms that saw a substantial change in their p-values are the END and IT tissue types along with the drought effect.  While the tissue types are still insignificant despite the decrease, drought has gone from marginally significant to significant at the 1% level. Note the order of effects is slightly different than in the first proposed model.
+Now let's consider the *Least Squares Means* table below.
+While some of the estimates have changed, with none being negative this time, we can see the only terms that saw a substantial change in their p-values are the END and IT tissue types along with the drought effect.
+While the tissue types are still insignificant despite the decrease, drought has gone from marginally significant to significant at the 1% level.
+Note the order of effects is slightly different than in the first proposed model.
 
-![*Least Squares Means* table for the nested model.](nested.ls-1.jpg)
+![*Least Squares Means* table for the nested model.](nes_ls-1.png)
 
-The *Differences of Least Squares Means* below follows the trend seen in the previous tables.  Some estimates are slightly different than in the first model, but the adjusted p-values for multiple comparisons are significant at the same level as before.
+The *Differences of Least Squares Means* below follows the trend seen in the previous tables.
+Some estimates are slightly different than in the first model, but the adjusted p-values for multiple comparisons are significant at the same level as before.
 
+![*Differences of Least Squares Means* table for the nested model.](nes_ls-2.png)
 
-![*Differences of Least Squares Means* table for the nested model.](nested.ls-2.jpg)
+There had been some hope that the nested structure of the model may help with the potential homoscedasticity violation seen in the first linear mixed model proposed.
+In the SAS figure of three graphs below, we can see the problem persists in the top left graph.
+It is worth noting though that the normality assumption seems to hold still.
 
-There had been some hope that the nested structure of the model may help with the potential homoscedasticity violation seen in the first linear mixed model proposed.  In the SAS figure of three graphs below, we can see the problem persists in the top left graph.  It is worth noting though that the normality assumption seems to hold still.
+![Residual plots and statistics for nested model.](nes_res.png){width="4in"}
 
-![Residual plots and statistics for nested model.](nested_res.png){width="4in"}
-
-We have seen the nested model does not improve upon some of the potential problems of the first model.  It appears to be very similar and even has worse metrics in some cases, such as the AIC.  This casts doubt on using this model over the original linear mixed model.
-
+We have seen the nested model does not improve upon some of the potential problems of the first model.
+It appears to be very similar and even has worse metrics in some cases, such as the AIC.
+This casts doubt on using this model over the original linear mixed model.
 
 ## GLMM Model
 
@@ -399,9 +421,20 @@ b <- starchmean/st_var
 
 ```
 
-For our third model we want to consider a generalized linear mixed model, or GLMM, instead of the linear mixed models we've just looked at.  This approach can be used on any response variable that follows a distribution belonging to an exponential family.  For this approach, link functions are used to work with these different types of distributions.  (@PennState).
+For our third model we want to consider a generalized linear mixed model, or GLMM, instead of the linear mixed models we've just looked at.
+This approach can be used on any response variable that follows a distribution belonging to an exponential family.
+For this approach, link functions are used to work with these different types of distributions.
+(@PennState).
 
-To use this approach we should determine a distribution that fits the starch content. In @fig-normallity, we found the distribution has a  skew.  One distribution that could fit this shape is a gamma distribution.  According to @CasellaBerger and @alphabeta, the gamma distribution requires some positive parameters $\alpha$, $\beta$ such that $E(X)=\alpha/\beta$ and $Var(X)=\alpha/\beta^2$ where $E(X)$ and $Var(X)$ represent the mean and variance of some variable $X$ respectively.  In our case $X$ is the starch content. Using the formulas above it can be shown that if our response variable follows a gamma distribution, it would be with an $\alpha$ of roughly 1.2333 and a $\beta$ of 0.6407.  (@CasellaBerger; @alphabeta).  @fig-gamma-graph shows a gamma distribution with these parameters on top of the histogram of starch content seen previously.  We can see the data fits this distribution fairly well so we will proceed.
+To use this approach we should determine a distribution that fits the starch content.
+In @fig-normallity, we found the distribution has a skew.
+One distribution that could fit this shape is a gamma distribution.
+According to @CasellaBerger and @alphabeta, the gamma distribution requires some positive parameters $\alpha$, $\beta$ such that $E(X)=\alpha/\beta$ and $Var(X)=\alpha/\beta^2$ where $E(X)$ and $Var(X)$ represent the mean and variance of some variable $X$ respectively.
+In our case $X$ is the starch content.
+Using the formulas above it can be shown that if our response variable follows a gamma distribution, it would be with an $\alpha$ of roughly 1.2333 and a $\beta$ of 0.6407.
+(@CasellaBerger; @alphabeta).
+@fig-gamma-graph shows a gamma distribution with these parameters on top of the histogram of starch content seen previously.
+We can see the data fits this distribution fairly well so we will proceed.
 
 ```{r, fig.pos="H"}
 #| label: fig-gamma-graph
@@ -424,35 +457,50 @@ ggplot(data, aes(x = StarchNscTissue)) +
 
 ```
 
-Since we are using a gamma distribution in this GLMM, we need to use the appropriate link function.  According to @glink, the link function that is often used with a gamma GLMMs is the inverse function.  
+Since we are using a gamma distribution in this GLMM, we need to use the appropriate link function.
+According to @glink, the link function that is often used with a gamma GLMMs is the inverse function.
 
-This means that
-$$
+This means that $$
 \mathbb{E}(y_{ijklmn})^{-1}=\eta_{ijklmn}
-$$
-where ${E}(y_{ijklmn})$ is the mean of the starch content and $\eta_{ijklmn}$ represents the inverse of that mean.  Using this new variable $\eta_{ijk}$ we can set up our model as 
+$$ where ${E}(y_{ijklmn})$ is the mean of the starch content and $\eta_{ijklmn}$ represents the inverse of that mean.
+Using this new variable $\eta_{ijk}$ we can set up our model as
 
 $$
 \eta_{ijklmn} = \mu + \alpha_i + \tau_j + \beta_k + (\alpha \tau)_{ij} + (\alpha \beta)_{ik} + (\tau \beta)_{jk} + (\alpha \tau \beta)_{ijk} + u_l + v_m + w_n
-$$
-In this model all terms and types (fixed and random) match what was included in the first model since all nested effects were removed.  As we move forward with analyzing SAS output from this model, it is important to keep in mind the formula above is modeling $\eta_{ijklmn}$, not ${E}(y_{ijklmn})$.
+$$ In this model all terms and types (fixed and random) match what was included in the first model since all nested effects were removed.
+As we move forward with analyzing SAS output from this model, it is important to keep in mind the formula above is modeling $\eta_{ijklmn}$, not ${E}(y_{ijklmn})$.
 
-Let's consider a part of the SAS output that is shown below.  One potential concern is in the *Fit Statistics for Conditional Distribution* table.  The value of 0.27 for `Pearson Chi-Square / DF` is not outstanding since values close to 1 indicate a good fit.  This implies there could be some overdispersion, which could contribute to the relatively low variance estimate for the residuals in the *Covariance Parameter Estimates* table.  In terms of significance, only tissue type and the treatment by tissue type interaction are significant.
+Let's consider a part of the SAS output that is shown below.
+One potential concern is in the *Fit Statistics for Conditional Distribution* table.
+The value of 0.27 for `Pearson Chi-Square / DF` is not outstanding since values close to 1 indicate a good fit.
+This implies there could be some overdispersion, which could contribute to the relatively low variance estimate for the residuals in the *Covariance Parameter Estimates* table.
+In terms of significance, only tissue type and the treatment by tissue type interaction are significant.
 
-![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, *Fit Statistics for Conditional Distribution*, and *Type 3 Tests of Fixed Effects* for GLMM.](glmm_output.png){width="3in"}
+![SAS output of *Covariance Parameter Estimates*, *Fit Statistics*, *Fit Statistics for Conditional Distribution*, and *Type 3 Tests of Fixed Effects* for GLMM.](glm_out.png){width="3in"}
 
-The next figure shows two tables for each fixed effect which are the *Least Squares Means* and *Differences of treatment Least Squares Means* tables.  For the treatments, the control level has a significant effect at the 5% level, but the difference between it and the drought level are not significant.  Both day and night are significant levels of the day period, but again their difference is not significant.  All four tissue types and most of the differences are considered significant.  The exceptions to this are the differences between END and IT types and LM and UM types.
+The next figure shows two tables for each fixed effect which are the *Least Squares Means* and *Differences of treatment Least Squares Means* tables.
+For the treatments, the control level has a significant effect at the 5% level, but the difference between it and the drought level are not significant.
+Both day and night are significant levels of the day period, but again their difference is not significant.
+All four tissue types and most of the differences are considered significant.
+The exceptions to this are the differences between END and IT types and LM and UM types.
 
-![*Least Squares Means* and *Differences of treatment Least Squares Means* table for each fixed effect.](glmm.ls.png) **Interpretation:**
+![Least Squares Means and Differences of treatment Least Squares Means table for each fixed effect.](glm_ls-1.png) 
 
-Once again let's consider the plots generated by SAS for checking our assumptions.  Again, the Q-Q plot looks relatively normal and the histogram is decent other than it is not centered around zero, but this is not an issue since the normality assumption is not required for a GLMM.  The residual versus linear predictor plot looks significantly better though as there does not seem to be any trend in the graph.
+![Fig-2](glm_ls-2.png)
 
-![Residual plots and statistics for GLMM.](glmm_res.png){width="4in"}
+![Fig-3](glm_ls-3.png)
+**Interpretation:**
 
-In this model we have seen the tissue type is highly significant.  The interaction between it and the treatment is also a contributing factor in the model.  Once again though, we have seen the period of the day is not significant.  While the fit of the gamma distribution is not great, the improved AIC from the mixed model is promising.
+Once again let's consider the plots generated by SAS for checking our assumptions.
+Again, the Q-Q plot looks relatively normal and the histogram is decent other than it is not centered around zero, but this is not an issue since the normality assumption is not required for a GLMM.
+The residual versus linear predictor plot looks significantly better though as there does not seem to be any trend in the graph.
 
+![Residual plots and statistics for GLMM.](glm_res.png){width="4in"}
 
-
+In this model we have seen the tissue type is highly significant.
+The interaction between it and the treatment is also a contributing factor in the model.
+Once again though, we have seen the period of the day is not significant.
+While the fit of the gamma distribution is not great, the improved AIC from the mixed model is promising.
 
 # Conclusion
 
@@ -472,11 +520,10 @@ Three models were evaluated: Mixed Effects Model with Interactions, Hierarchical
 The Mixed Effects Model showed significant effects for tissue and treatment-tissue interaction, with residuals meeting normality assumptions better than the GLMM.
 Due to its balance of fit, interpretability, and simplicity, the Mixed Effects Model was recommended as the best approach.
 
-**Recommendation**: \
+**Recommendation**:\
 Since, the **significant Tissue\*Treatment interaction** highlights the need for tissue-specific analysis in drought studies, as different tissue types respond uniquely to environmental stress.
-Future research should focus on high-starch tissues (LM and UM), conducting separate analyses under various water conditions to better understand drought\'s impact on starch allocation and plant energy reserves.
+Future research should focus on high-starch tissues (LM and UM), conducting separate analyses under various water conditions to better understand drought's impact on starch allocation and plant energy reserves.
 **In summary**, LM and UM tissues, with high starch levels under control conditions and significant reductions under drought, should be prioritized in drought management and resilience research.
-
 
 \newpage
 
